@@ -62,7 +62,12 @@ export function LoginModal({
         throw new Error(data.error || "Failed to login");
       }
 
-      // Use the auth hook to handle login
+      // Store the full user data with tutorId
+      if (data.data.user) {
+        localStorage.setItem("user", JSON.stringify(data.data.user));
+      }
+
+      // Use the auth hook to handle login (this will also store the token)
       login(data.data.token);
 
       // Close modal

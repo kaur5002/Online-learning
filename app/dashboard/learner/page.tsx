@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import Sidebar from "./components/sidebar";
 import Skills from "./components/skills";
@@ -11,8 +11,17 @@ import AccountSettings from "./components/account-settings";
 
 export default function LearnerDashboard() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, isAuthenticated, isLoading } = useAuth();
   const [activeTab, setActiveTab] = useState("skills");
+
+  useEffect(() => {
+    // Check for tab parameter in URL
+    const tabParam = searchParams.get("tab");
+    if (tabParam && ["skills", "bookings", "reviews", "settings"].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (!isLoading) {

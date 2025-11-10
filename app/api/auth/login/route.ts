@@ -26,6 +26,9 @@ export async function POST(request: NextRequest) {
     // Find user by email
     const user = await prisma.user.findUnique({
       where: { email },
+      include: {
+        tutor: true, // Include tutor data if user is a tutor
+      },
     });
 
     if (!user) {
@@ -65,9 +68,10 @@ export async function POST(request: NextRequest) {
             name: user.name,
             email: user.email,
             role: user.role,
-            bio: user.bio,
+            bio: user.tutor?.bio || null,
             profileImageUrl: user.profileImageUrl,
             createdAt: user.createdAt,
+            tutorId: user.tutor?.id || null, // Include tutor ID for easy access
           },
           token,
         },

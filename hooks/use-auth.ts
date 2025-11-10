@@ -77,6 +77,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = (token: string) => {
     localStorage.setItem("token", token);
+    
+    // First check if user data is already in localStorage (set by login modal)
+    const existingUserData = localStorage.getItem("user");
+    if (existingUserData) {
+      try {
+        const parsedUser = JSON.parse(existingUserData);
+        setUser(parsedUser);
+        return;
+      } catch {
+        // If parsing fails, continue with token decoding
+      }
+    }
+    
+    // Fallback to decoding token if no user data in localStorage
     const decoded = decodeToken(token);
     if (decoded) {
       // Convert JWT payload to User format

@@ -1,130 +1,201 @@
 "use client";
 
-import { Search, BookOpen, Star, Clock } from "lucide-react";
-import { useState } from "react";
+import { Search, BookOpen, Star, Clock, Calendar, Loader2, ArrowRight } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/hooks/use-auth";
+import axios from "axios";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+
+interface Enrollment {
+  id: string;
+  enrolledAt: string;
+  progress: number;
+  hoursCompleted: number;
+  course: {
+    id: string;
+    title: string;
+    totalHours: number;
+    imageUrl?: string;
+    tutor: {
+      user: {
+        id: string;
+        name: string;
+      };
+    };
+  };
+}
+
+interface Booking {
+  id: string;
+  sessionDate: string;
+  durationMin: number;
+  status: string;
+  course: {
+    id: string;
+    title: string;
+  };
+  tutor: {
+    user: {
+      id: string;
+      name: string;
+    };
+  };
+}
 
 export default function Skills() {
   const [searchQuery, setSearchQuery] = useState("");
+  const { user } = useAuth();
+  const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
+  const [upcomingBookings, setUpcomingBookings] = useState<Booking[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchLearningData();
+    }
+  }, [user]);
+
+  const fetchLearningData = async () => {
+    try {
+      setLoading(true);
+      // Fetch enrollments
+      const enrollmentsResponse = await axios.get(`/api/enrollments?userId=${user?.id}`);
+      setEnrollments(enrollmentsResponse.data.data || []);
+
+      // Fetch bookings
+      const bookingsResponse = await axios.get(`/api/bookings?learnerId=${user?.id}`);
+      const allBookings = bookingsResponse.data.data || [];
+      
+      // Filter for upcoming confirmed bookings
+      const upcoming = allBookings.filter((booking: Booking) => 
+        booking.status === 'confirmed' && new Date(booking.sessionDate) > new Date()
+      );
+      setUpcomingBookings(upcoming);
+    } catch (error) {
+      console.error("Error fetching learning data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const totalHoursCompleted = enrollments.reduce((sum, enrollment) => sum + (enrollment.hoursCompleted || 0), 0);
+  const completedCourses = enrollments.filter(e => e.progress === 100).length;
+
+  const formatDateTime = (dateString: string) => {
+    return new Date(dateString).toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">Discover Skills</h2>
-        <p className="text-muted-foreground mt-1">
-          Find the perfect tutor for your learning goals
-        </p>
-      </div>
-
-      {/* Search Bar */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <input
-          type="text"
-          placeholder="Search for skills..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="flex h-10 w-full rounded-md border border-input bg-background pl-10 pr-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-        />
-      </div>
-
-      {/* Popular Categories */}
-      <div className="rounded-lg border bg-card shadow-sm">
-        <div className="border-b p-6">
-          <h3 className="text-lg font-semibold">Popular Categories</h3>
-        </div>
-        <div className="p-6">
-          <div className="grid gap-4 sm:grid-cols-2">
-            {[
-              "Programming",
-              "Design",
-              "Business",
-              "Languages",
-              "Music",
-              "Fitness",
-            ].map((category) => (
-              <button
-                key={category}
-                className="flex items-center gap-3 rounded-lg border bg-background p-4 hover:bg-accent transition-colors"
-              >
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                  <BookOpen className="h-5 w-5 text-primary" />
-                </div>
-                <span className="font-medium">{category}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Featured Tutors */}
-      <div className="rounded-lg border bg-card shadow-sm">
-        <div className="border-b p-6">
-          <h3 className="text-lg font-semibold">Featured Tutors</h3>
-          <p className="text-sm text-muted-foreground mt-1">
-            Top-rated tutors in your area
-          </p>
-        </div>
-        <div className="p-6">
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <Search className="h-12 w-12 text-muted-foreground mb-4" />
-            <p className="text-sm text-muted-foreground mb-4">
-              Start searching to discover amazing tutors
-            </p>
-            <button className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90">
-              Browse All Tutors
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* My Learning */}
-      <div className="rounded-lg border bg-card shadow-sm">
-        <div className="border-b p-6">
-          <h3 className="text-lg font-semibold">My Learning</h3>
-        </div>
-        <div className="p-6">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 rounded-lg border bg-background">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
-                  <BookOpen className="h-5 w-5 text-blue-600" />
-                </div>
-                <div>
-                  <p className="font-medium">Active Courses</p>
-                  <p className="text-sm text-muted-foreground">0 enrolled</p>
-                </div>
-              </div>
-              <span className="text-2xl font-bold">0</span>
+     
+     
+      {/* Enrolled Courses */}
+      {enrollments.length > 0 && (
+        <div className="rounded-lg border bg-card shadow-sm">
+          <div className="border-b p-6 flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold">My Enrolled Courses</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Continue your learning journey
+              </p>
             </div>
-            <div className="flex items-center justify-between p-4 rounded-lg border bg-background">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-yellow-100">
-                  <Star className="h-5 w-5 text-yellow-600" />
-                </div>
-                <div>
-                  <p className="font-medium">Completed</p>
-                  <p className="text-sm text-muted-foreground">
-                    Skills mastered
-                  </p>
-                </div>
-              </div>
-              <span className="text-2xl font-bold">0</span>
-            </div>
-            <div className="flex items-center justify-between p-4 rounded-lg border bg-background">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100">
-                  <Clock className="h-5 w-5 text-green-600" />
-                </div>
-                <div>
-                  <p className="font-medium">Learning Hours</p>
-                  <p className="text-sm text-muted-foreground">Total time</p>
-                </div>
-              </div>
-              <span className="text-2xl font-bold">0h</span>
+            <Link href="/dashboard/learner?tab=bookings">
+              <Button variant="ghost" size="sm">
+                View All
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
+            </Link>
+          </div>
+          <div className="p-6">
+            <div className="space-y-4">
+              {enrollments.slice(0, 3).map((enrollment) => (
+                <Link 
+                  key={enrollment.id} 
+                  href={`/course/${enrollment.course.id}`}
+                  className="block"
+                >
+                  <div className="flex items-center gap-4 p-4 rounded-lg border bg-background hover:bg-accent transition-colors">
+                    <div className="flex-1">
+                      <h4 className="font-semibold mb-1">{enrollment.course.title}</h4>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        by {enrollment.course.tutor.user.name}
+                      </p>
+                      <div className="flex items-center gap-4 text-sm">
+                        <span className="text-muted-foreground">
+                          {enrollment.hoursCompleted || 0} / {enrollment.course.totalHours} hours
+                        </span>
+                        <span className="text-primary font-medium">
+                          {enrollment.progress || 0}% complete
+                        </span>
+                      </div>
+                      {/* Progress Bar */}
+                      <div className="mt-2 h-2 bg-muted rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-primary transition-all"
+                          style={{ width: `${enrollment.progress || 0}%` }}
+                        />
+                      </div>
+                    </div>
+                    <ArrowRight className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                </Link>
+              ))}
             </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* Upcoming Sessions */}
+      {upcomingBookings.length > 0 && (
+        <div className="rounded-lg border bg-card shadow-sm">
+          <div className="border-b p-6 flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold">Upcoming Sessions</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Your scheduled sessions
+              </p>
+            </div>
+            <Link href="/dashboard/learner?tab=bookings">
+              <Button variant="ghost" size="sm">
+                View All
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
+            </Link>
+          </div>
+          <div className="p-6">
+            <div className="space-y-3">
+              {upcomingBookings.slice(0, 3).map((booking) => (
+                <div
+                  key={booking.id}
+                  className="flex items-center justify-between p-4 rounded-lg border bg-background"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100">
+                      <Calendar className="h-5 w-5 text-purple-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium">{booking.course.title}</p>
+                      <p className="text-sm text-muted-foreground">
+                        with {booking.tutor.user.name}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-medium">{formatDateTime(booking.sessionDate)}</p>
+                    <p className="text-xs text-muted-foreground">{booking.durationMin} min</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,11 +1,15 @@
 "use client"
 
+import { useState } from "react"
 import { Header } from "@/components/header"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { AlertModal } from "@/components/alert-modal"
+import { LoginModal } from "@/components/login-modal"
 import Link from "next/link"
 import { useTutorDetail } from "@/hooks/use-tutor-detail"
+import { useAuth } from "@/hooks/use-auth"
 import { useParams } from "next/navigation"
 import { Loader2, Star, Users, Clock, MessageSquare } from "lucide-react"
 import Image from "next/image"
@@ -14,6 +18,69 @@ export default function TutorProfilePage() {
   const params = useParams()
   const tutorId = params.id as string
   const { data, isLoading } = useTutorDetail(tutorId)
+  const { isAuthenticated, user } = useAuth()
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
+  const [alertModal, setAlertModal] = useState<{
+    isOpen: boolean;
+    message: string;
+    title?: string;
+    type?: "error" | "warning" | "info" | "success";
+  }>({
+    isOpen: false,
+    message: "",
+  })
+
+  const handleEnrollClick = () => {
+    if (!isAuthenticated) {
+      setIsLoginModalOpen(true)
+      return
+    }
+
+    if (user?.role !== "learner") {
+      setAlertModal({
+        isOpen: true,
+        message: "Only learners can enroll in courses and book sessions. Please sign up with a learner account to access these features.",
+        title: "Learner Access Required",
+        type: "error",
+      })
+      return
+    }
+
+    // If user is a learner, proceed with enrollment logic
+    // TODO: Implement enrollment logic here
+    setAlertModal({
+      isOpen: true,
+      message: "Enrollment functionality coming soon! You'll be able to enroll in courses directly from this page.",
+      title: "Coming Soon",
+      type: "info",
+    })
+  }
+
+  const handleBookSession = () => {
+    if (!isAuthenticated) {
+      setIsLoginModalOpen(true)
+      return
+    }
+
+    if (user?.role !== "learner") {
+      setAlertModal({
+        isOpen: true,
+        message: "Only learners can book sessions with tutors. Please create a learner account to book tutorial sessions.",
+        title: "Learner Access Required",
+        type: "error",
+      })
+      return
+    }
+
+    // If user is a learner, proceed with booking logic
+    // TODO: Implement booking logic here
+    setAlertModal({
+      isOpen: true,
+      message: "Session booking functionality coming soon! You'll be able to schedule one-on-one sessions with tutors.",
+      title: "Coming Soon",
+      type: "info",
+    })
+  }
 
   if (isLoading) {
     return (
@@ -52,7 +119,7 @@ export default function TutorProfilePage() {
           <div className="max-w-6xl mx-auto space-y-8">
             {/* Tutor Header */}
             <Card className="overflow-hidden">
-              <div className="h-32 bg-gradient-to-r from-primary/20 to-primary/10" />
+              <div className="h-32 bg-linear-to-r from-primary/20 to-primary/10" />
               <CardContent className="pt-0">
                 <div className="flex flex-col md:flex-row gap-6 -mt-16 mb-6">
                   <Image
@@ -94,13 +161,13 @@ export default function TutorProfilePage() {
                       <p className="text-sm text-muted-foreground">per hour</p>
                     </div> */}
            
-                    <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90">
+                    <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90" onClick={handleEnrollClick}>
                       <MessageSquare className="mr-2 h-5 w-5" />
                       Enroll now
                     </Button>
-                    <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90">
+                    <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90" onClick={handleBookSession}>
                       <MessageSquare className="mr-2 h-5 w-5" />
-                  Book a tutorial
+                      Book a tutorial
                     </Button>
                
                   </div>
@@ -158,7 +225,7 @@ export default function TutorProfilePage() {
                           </div>
                           <span className="font-bold text-primary">${skill.price}</span>
                         </div>
-                        <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
+                        <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90" onClick={handleEnrollClick}>
                           Enroll Now
                         </Button>
                       </CardContent>
@@ -176,6 +243,17 @@ export default function TutorProfilePage() {
           </div>
         </div>
       </main>
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+      />
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+        message={alertModal.message}
+        title={alertModal.title}
+        type={alertModal.type}
+      />
     </div>
   )
 }
