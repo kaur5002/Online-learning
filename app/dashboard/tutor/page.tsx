@@ -6,7 +6,9 @@ import { useAuth } from "@/hooks/use-auth";
 import Sidebar from "./components/sidebar";
 import Courses from "./components/courses";
 import Bookings from "./components/bookings";
+import Payments from "./components/payments";
 import Reviews from "./components/reviews";
+import ReviewForm from "./components/review-form";
 import AccountSettings from "./components/account-settings";
 
 export default function TutorDashboard() {
@@ -35,8 +37,12 @@ export default function TutorDashboard() {
         return <Courses />;
       case "bookings":
         return <Bookings />;
+      case "payments":
+        return <Payments />;
       case "reviews":
         return <Reviews />;
+      case "review-form":
+        return <ReviewForm />;
       case "settings":
         return <AccountSettings user={user} />;
       default:

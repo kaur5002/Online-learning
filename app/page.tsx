@@ -126,18 +126,14 @@ export default function HomePage() {
             <p className="text-xl text-muted-foreground mb-8 text-balance">
               Connect with expert tutors worldwide for interactive video sessions and personalized learning experiences.
             </p>
+           
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/learn">
                 <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90">
-                  Explore Skills <ArrowRight className="ml-2 h-5 w-5" />
+                  Explore Skills <ArrowRight className="ml-2 h-10 w-10" />
                 </Button>
               </Link>
-              <Link href="/">
-                <Button size="lg" variant="outline" className="gap-2 bg-transparent">
-                Become a Teacher
-              </Button>
-              </Link>
-              
+ 
             </div>
           </div>
         </section>

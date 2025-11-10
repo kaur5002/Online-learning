@@ -82,6 +82,18 @@ export async function GET(request: NextRequest) {
             },
           },
           category: true,
+          enrollments: {
+            include: {
+              student: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  profileImageUrl: true,
+                },
+              },
+            },
+          },
           _count: {
             select: {
               enrollments: true,

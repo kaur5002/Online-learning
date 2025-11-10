@@ -280,6 +280,18 @@ export default function CourseFormModal({
                         </div>
 
                         <div>
+                            <label className="block text-sm font-medium mb-2">Image URL</label>
+                            <input
+                                type="url"
+                                value={formData.imageUrl || ""}
+                                onChange={(e) => setFormData(prev => ({ ...prev, imageUrl: e.target.value }))}
+                                placeholder="https://example.com/course-image.jpg"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">Optional: Add a URL for the course image to display on the website</p>
+                        </div>
+
+                        <div>
                             <label className="block text-sm font-medium mb-2">Overview *</label>
                             <textarea
                                 required
@@ -348,7 +360,7 @@ export default function CourseFormModal({
                                     type="number"
                                     required
                                     min="0"
-                                    step="0.01"
+                                    step="1"
                                     value={formData.trialRate}
                                     onChange={(e) => setFormData(prev => ({ ...prev, trialRate: parseFloat(e.target.value) || 0 }))}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -361,7 +373,7 @@ export default function CourseFormModal({
                                     type="number"
                                     required
                                     min="0"
-                                    step="0.01"
+                                    step="1"
                                     value={formData.fullCourseRate}
                                     onChange={(e) => setFormData(prev => ({ ...prev, fullCourseRate: parseFloat(e.target.value) || 0 }))}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"

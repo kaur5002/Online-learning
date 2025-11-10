@@ -91,7 +91,7 @@ export default function ReviewsPage() {
                         <div className="flex items-start gap-4 flex-1">
                           <Image
                             src={review.studentAvatar || "/placeholder.svg"}
-                            alt={review.studentName}
+                            alt={review.studentName || "Student profile picture"}
                             width={48}
                             height={48}
                             className="w-12 h-12 rounded-full object-cover"

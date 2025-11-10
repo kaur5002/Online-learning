@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { BookOpen, Calendar, Star, Settings, Menu, X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { BookOpen, Calendar, Star, Settings, Menu, X, ClipboardList, DollarSign } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SidebarProps {
@@ -11,15 +11,26 @@ interface SidebarProps {
 
 const menuItems = [
   { id: "courses", label: "Courses", icon: BookOpen },
-  { id: "bookings", label: "Bookings", icon: Calendar },
-  { id: "reviews", label: "Reviews", icon: Star },
+  { id: "bookings", label: "Sessions", icon: Calendar },
+  { id: "payments", label: "Payments", icon: DollarSign },
+  //{ id: "reviews", label: "Reviews", icon: Star },
+  { id: "review-form", label: "Review Form", icon: ClipboardList },
   { id: "settings", label: "Account Settings", icon: Settings },
 ];
 
 export default function Sidebar({ activeTab, onTabChange }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const toggleSidebar = () => setIsOpen(!isOpen);
+
+  if (!mounted) {
+    return null;
+  }
 
   return (
     <>

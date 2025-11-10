@@ -11,6 +11,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { LoginModal } from "@/components/login-modal";
+import { AlertModal } from "@/components/alert-modal";
+import { SessionTypeModal } from "@/components/session-type-modal";
 import Link from "next/link";
 import { useCourse } from "@/hooks/use-course";
 import { useAuth } from "@/hooks/use-auth";
@@ -31,12 +33,78 @@ export default function CoursePage() {
   const params = useParams();
   const courseId = params.id as string;
   const { data: course, isLoading } = useCourse(courseId);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { handleCheckout, loading: checkoutLoading } = useCheckout();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isSessionTypeModalOpen, setIsSessionTypeModalOpen] = useState(false);
   const [activeCheckout, setActiveCheckout] = useState<"trial" | "full" | null>(
     null
   );
+  const [pendingSessionType, setPendingSessionType] = useState<"individual" | "group" | null>(null);
+  const [alertModal, setAlertModal] = useState<{
+    isOpen: boolean;
+    message: string;
+    title?: string;
+    type?: "error" | "warning" | "info" | "success";
+  }>({
+    isOpen: false,
+    message: "",
+  });
+
+  const handleEnrollClick = (type: "trial" | "full", amount: number) => {
+    setActiveCheckout(type);
+    
+    if (!isAuthenticated) {
+      setIsLoginModalOpen(true);
+      return;
+    }
+
+    if (user?.role !== "learner") {
+      setAlertModal({
+        isOpen: true,
+        message: "Only learners can enroll in courses. Please sign up as a learner account to book sessions and enroll in courses.",
+        title: "Learner Access Required",
+        type: "error",
+      });
+      return;
+    }
+
+    // For session bookings, show session type modal first
+    if (type === "trial") {
+      setIsSessionTypeModalOpen(true);
+    } else {
+      // For full course enrollment, proceed directly to checkout
+      proceedToCheckout(type, amount);
+    }
+  };
+
+  const handleSessionTypeSelect = (sessionType: "individual" | "group") => {
+    setPendingSessionType(sessionType);
+    setIsSessionTypeModalOpen(false);
+    
+    // Proceed to checkout with the selected session type
+    if (activeCheckout === "trial") {
+      proceedToCheckout(activeCheckout, course!.trialRate, sessionType);
+    }
+  };
+
+  const proceedToCheckout = (type: "trial" | "full", amount: number, sessionType?: "individual" | "group") => {
+    // Determine payment type: "trial" is a single session, "full" is enrollment
+    const paymentType = type === "trial" ? "session" : "enrollment";
+    const sessionDate = type === "trial" ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() : undefined;
+
+    handleCheckout({
+      courseId,
+      courseName: course!.title,
+      amount: amount,
+      userId: user!.id,
+      userEmail: user!.email,
+      userRole: user!.role,
+      paymentType: paymentType,
+      sessionDate: sessionDate,
+      sessionType: sessionType,
+    });
+  };
 
   if (isLoading) {
     return (
@@ -74,82 +142,24 @@ export default function CoursePage() {
       <Header />
       <main className="flex-1">
         {/* Hero Section with Course Image */}
-        <div className="relative h-96 w-full bg-muted">
+        <div className="relative w-full h-72 md:h-96 lg:h-112 bg-muted overflow-hidden">
           <Image
             src={course.imageUrl || "/placeholder.svg"}
             alt={course.title}
             fill
-            className="object-cover"
+            className="object-cover object-center"
             priority
+            sizes="100vw"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
+          <div className="absolute inset-0 bg-linear-to-t from-background via-background/50 to-transparent" />
 
-          {/* Top Action Buttons */}
-          <div className="absolute top-4 left-4 right-4">
-            <div className="flex justify-between items-start">
-              <Link href="/learn">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-2 bg-white/90 hover:bg-white"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                  Back
-                </Button>
-              </Link>
-              <div className="flex gap-3">
-                <Button
-                  size="sm"
-                  className="bg-primary text-primary-foreground hover:bg-primary/90"
-                  onClick={() => {
-                    setActiveCheckout("trial");
-                    if (isAuthenticated) {
-                      handleCheckout({
-                        courseId,
-                        courseName: course.title,
-                        amount: course.trialRate,
-                      });
-                    } else {
-                      setIsLoginModalOpen(true);
-                    }
-                  }}
-                  disabled={checkoutLoading}
-                >
-                  {checkoutLoading && activeCheckout === "trial"
-                    ? "Processing..."
-                    : "Book Trial Session"}
-                </Button>
-                <Button
-                  size="sm"
-                  className="bg-accent text-accent-foreground hover:bg-accent/90"
-                  onClick={() => {
-                    setActiveCheckout("full");
-                    if (isAuthenticated) {
-                      handleCheckout({
-                        courseId,
-                        courseName: course.title,
-                        amount: course.fullCourseRate,
-                      });
-                    } else {
-                      setIsLoginModalOpen(true);
-                    }
-                  }}
-                  disabled={checkoutLoading}
-                >
-                  {checkoutLoading && activeCheckout === "full"
-                    ? "Processing..."
-                    : "Enroll Full Course"}
-                </Button>
-              </div>
-            </div>
-          </div>
 
           {/* Course Title Overlay */}
           <div className="absolute inset-0 flex flex-col justify-end p-8">
-            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 drop-shadow-lg">
+            <h1 className="text-4xl md:text-5xl font-bold text-black mb-4 drop-shadow-lg">
               {course.title}
             </h1>
-            <div className="flex flex-wrap gap-4 items-center text-white drop-shadow">
+            <div className="flex flex-wrap gap-4 items-center text-black drop-shadow">
               <div className="flex items-center gap-2">
                 <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
                 <span className="font-semibold">4.5</span>
@@ -162,7 +172,7 @@ export default function CoursePage() {
               <div className="flex items-center gap-2">
                 <Clock className="h-5 w-5" />
                 <span>{course.totalHours} hours</span>
-              </div>
+              </div>3
               <div className="flex items-center gap-2">
                 <span className="px-2 py-1 bg-primary/20 rounded text-sm capitalize">
                   {course.difficulty}
@@ -415,18 +425,7 @@ export default function CoursePage() {
 
                   <Button
                     className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-12 text-base"
-                    onClick={() => {
-                      setActiveCheckout("trial");
-                      if (isAuthenticated) {
-                        handleCheckout({
-                          courseId,
-                          courseName: course.title,
-                          amount: course.trialRate,
-                        });
-                      } else {
-                        setIsLoginModalOpen(true);
-                      }
-                    }}
+                    onClick={() => handleEnrollClick("trial", course.trialRate)}
                     disabled={checkoutLoading}
                   >
                     {checkoutLoading && activeCheckout === "trial"
@@ -436,18 +435,7 @@ export default function CoursePage() {
                   <Button
                     variant="outline"
                     className="w-full h-12 text-base border-primary text-primary hover:bg-primary/10 bg-transparent"
-                    onClick={() => {
-                      setActiveCheckout("full");
-                      if (isAuthenticated) {
-                        handleCheckout({
-                          courseId,
-                          courseName: course.title,
-                          amount: course.fullCourseRate,
-                        });
-                      } else {
-                        setIsLoginModalOpen(true);
-                      }
-                    }}
+                    onClick={() => handleEnrollClick("full", course.fullCourseRate)}
                     disabled={checkoutLoading}
                   >
                     {checkoutLoading && activeCheckout === "full"
@@ -510,6 +498,19 @@ export default function CoursePage() {
       <LoginModal
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
+      />
+      <SessionTypeModal
+        isOpen={isSessionTypeModalOpen}
+        onClose={() => setIsSessionTypeModalOpen(false)}
+        onSelect={handleSessionTypeSelect}
+        courseName={course?.title}
+      />
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+        message={alertModal.message}
+        title={alertModal.title}
+        type={alertModal.type}
       />
     </div>
   );

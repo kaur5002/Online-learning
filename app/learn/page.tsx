@@ -98,13 +98,15 @@ export default function LearnPage() {
               ) : (
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {courses?.map((course) => (
-                    <Card key={course.id} className="hover:shadow-lg transition-shadow overflow-hidden">
-                      <div className="relative h-40 w-full bg-muted">
+                    <Card key={course.id} className="hover:shadow-lg transition-shadow overflow-hidden flex flex-col">
+                      <div className="relative w-full aspect-4/3 overflow-hidden bg-muted">
                         <Image
                           src={course.imageUrl || "/placeholder.svg"}
                           alt={course.title}
                           fill
-                          className="object-cover"
+                          className="object-cover object-center"
+                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                          priority={false}
                         />
                       </div>
                       <CardHeader>

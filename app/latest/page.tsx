@@ -43,13 +43,14 @@ export default function LatestPage() {
               ) : (
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {latestSkills.map((skill) => (
-                    <Card key={skill.id} className="hover:shadow-lg transition-shadow overflow-hidden">
-                      <div className="relative h-40 w-full bg-muted">
+                    <Card key={skill.id} className="hover:shadow-lg transition-shadow overflow-hidden flex flex-col">
+                      <div className="relative w-full aspect-4/3 overflow-hidden bg-muted">
                         <Image
                           src={skill.image || "/placeholder.svg"}
                           alt={skill.title}
                           fill
-                          className="object-cover"
+                          className="object-cover object-center"
+                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                         />
                         <Badge className="absolute top-3 right-3 bg-accent text-accent-foreground">New</Badge>
                       </div>

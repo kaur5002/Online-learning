@@ -46,17 +46,31 @@ export async function POST(request: NextRequest) {
         email,
         password, // In production, use hashedPassword
         role,
-        bio,
         profileImageUrl,
+        // If role is tutor, create the tutor profile
+        ...(role === "tutor" && bio
+          ? {
+              tutor: {
+                create: {
+                  bio: bio,
+                },
+              },
+            }
+          : {}),
       },
       select: {
         id: true,
         name: true,
         email: true,
         role: true,
-        bio: true,
         profileImageUrl: true,
         createdAt: true,
+        tutor: {
+          select: {
+            id: true,
+            bio: true,
+          },
+        },
         // Exclude password
       },
     });
@@ -64,7 +78,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        data: user,
+        data: {
+          ...user,
+          bio: user.tutor?.bio || null,
+          tutorId: user.tutor?.id || null, // Include tutor ID for easy access
+        },
         message: "User registered successfully",
       },
       { status: 201 }

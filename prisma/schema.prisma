@@ -110,6 +110,7 @@ model Booking {
   sessionDate   DateTime
   durationMin   Int
   status        BookingStatus @default(pending)
+  sessionType   SessionType @default(individual)
   videoLink     String?
   createdAt     DateTime   @default(now())
 
@@ -140,7 +141,24 @@ model Review {
   courseId       String    @db.ObjectId
   rating         Int
   comment        String?
+  status         ReviewStatus @default(pending)
   createdAt      DateTime  @default(now())
+  approvedAt     DateTime?
+}
+
+model ReviewRequest {
+  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  tutorId        String    @db.ObjectId
+  courseId       String    @db.ObjectId
+  studentId      String    @db.ObjectId
+  message        String?
+  sentAt         DateTime  @default(now())
+  respondedAt    DateTime?
+  status         ReviewRequestStatus @default(pending)
+
+  @@unique([tutorId, courseId, studentId, status])
+  @@index([tutorId, status])
+  @@index([studentId, status])
 }
 
 type CourseSchedule {
@@ -187,4 +205,21 @@ enum PaymentStatus {
   pending
   completed
   failed
+}
+
+enum ReviewStatus {
+  pending
+  accepted
+  rejected
+}
+
+enum ReviewRequestStatus {
+  pending
+  responded
+  expired
+}
+
+enum SessionType {
+  individual
+  group
 }

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Menu, User, LogOut } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SignupModal } from "./signup-modal";
 import { LoginModal } from "./login-modal";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,12 @@ import {
 export function Header() {
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const { user, isAuthenticated, logout, isLoading } = useAuth();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleSignupClick = () => {
     setIsLoginModalOpen(false);
@@ -36,7 +41,7 @@ export function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
         <div className="container flex h-16 items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
@@ -65,7 +70,7 @@ export function Header() {
 
           <div className="flex items-center gap-4">
             <div className="hidden md:flex items-center gap-4">
-              {isLoading ? (
+              {!mounted || isLoading ? (
                 <div className="h-9 w-20 bg-muted animate-pulse rounded-md" />
               ) : isAuthenticated ? (
                 <>
