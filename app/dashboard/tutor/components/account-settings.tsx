@@ -9,7 +9,8 @@ import {
   Shield,
   Briefcase,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import axios from "axios";
 
 interface User {
   id: string;
@@ -24,10 +25,204 @@ interface AccountSettingsProps {
   user: User | null;
 }
 
+interface TutorProfile {
+  name: string;
+  bio: string;
+  profileImageUrl: string;
+  hourlyRate: number;
+  specialties: string[];
+  availability: string;
+  sessionDuration: string;
+  language: string;
+  timezone: string;
+}
+
 export default function AccountSettings({ user }: AccountSettingsProps) {
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [pushNotifications, setPushNotifications] = useState(false);
   const [bookingNotifications, setBookingNotifications] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  
+  const [profile, setProfile] = useState<TutorProfile>({
+    name: user?.name || "",
+    bio: user?.bio || "",
+    profileImageUrl: user?.profileImageUrl || "",
+    hourlyRate: 25,
+    specialties: [],
+    availability: "Flexible - All days",
+    sessionDuration: "1 hour",
+    language: "English",
+    timezone: "UTC-08:00 Pacific Time",
+  });
+
+  const [newSpecialty, setNewSpecialty] = useState("");
+
+  // Fetch tutor profile data
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        setIsLoading(true);
+        const token = localStorage.getItem("token");
+        console.log("Token exists:", !!token);
+        console.log("Token preview:", token ? token.substring(0, 20) + "..." : "No token");
+        
+        if (!token) {
+          console.warn("No token found, skipping profile fetch");
+          setIsLoading(false);
+          return;
+        }
+        
+        const response = await axios.get("/api/tutors/profile", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        
+        console.log("Profile response:", response.data);
+        
+        if (response.data.success) {
+          const data = response.data.data;
+          setProfile({
+            name: data.name || "",
+            bio: data.bio || "",
+            profileImageUrl: data.profileImageUrl || "",
+            hourlyRate: data.hourlyRate || 25,
+            specialties: data.specialties || [],
+            availability: data.availability || "Flexible - All days",
+            sessionDuration: data.sessionDuration || "1 hour",
+            language: data.language || "English",
+            timezone: data.timezone || "UTC-08:00 Pacific Time",
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+        if (axios.isAxiosError(error)) {
+          console.error("Response status:", error.response?.status);
+          console.error("Response data:", error.response?.data);
+          
+          if (error.response?.status === 401) {
+            setMessage({ 
+              type: 'error', 
+              text: 'Session expired. Please log out and log in again.' 
+            });
+          }
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (user) {
+      fetchProfile();
+    }
+  }, [user]);
+
+  const handleSaveProfile = async () => {
+    try {
+      setIsSaving(true);
+      setMessage(null);
+      const token = localStorage.getItem("token");
+      const response = await axios.patch("/api/tutors/profile", profile, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.data.success) {
+        setMessage({ type: 'success', text: 'Profile updated successfully!' });
+        setTimeout(() => setMessage(null), 3000);
+      }
+    } catch (error) {
+      console.error("Error saving profile:", error);
+      setMessage({ type: 'error', text: 'Failed to update profile. Please try again.' });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveTeachingPreferences = async () => {
+    try {
+      setIsSaving(true);
+      setMessage(null);
+      const token = localStorage.getItem("token");
+      const response = await axios.patch("/api/tutors/profile", {
+        hourlyRate: profile.hourlyRate,
+        availability: profile.availability,
+        sessionDuration: profile.sessionDuration,
+        specialties: profile.specialties,
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.data.success) {
+        setMessage({ type: 'success', text: 'Teaching preferences updated successfully!' });
+        setTimeout(() => setMessage(null), 3000);
+      }
+    } catch (error) {
+      console.error("Error saving preferences:", error);
+      setMessage({ type: 'error', text: 'Failed to update preferences. Please try again.' });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveLanguagePreferences = async () => {
+    try {
+      setIsSaving(true);
+      setMessage(null);
+      const token = localStorage.getItem("token");
+      const response = await axios.patch("/api/tutors/profile", {
+        language: profile.language,
+        timezone: profile.timezone,
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.data.success) {
+        setMessage({ type: 'success', text: 'Preferences updated successfully!' });
+        setTimeout(() => setMessage(null), 3000);
+      }
+    } catch (error) {
+      console.error("Error saving preferences:", error);
+      setMessage({ type: 'error', text: 'Failed to update preferences. Please try again.' });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const addSpecialty = () => {
+    if (newSpecialty.trim() && !profile.specialties.includes(newSpecialty.trim())) {
+      setProfile({
+        ...profile,
+        specialties: [...profile.specialties, newSpecialty.trim()],
+      });
+      setNewSpecialty("");
+    }
+  };
+
+  const removeSpecialty = (specialty: string) => {
+    setProfile({
+      ...profile,
+      specialties: profile.specialties.filter(s => s !== specialty),
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading profile...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -37,6 +232,13 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
           Manage your tutor profile and preferences
         </p>
       </div>
+
+      {/* Success/Error Message */}
+      {message && (
+        <div className={`rounded-lg p-4 ${message.type === 'success' ? 'bg-green-50 dark:bg-green-950 text-green-800 dark:text-green-100' : 'bg-red-50 dark:bg-red-950 text-red-800 dark:text-red-100'}`}>
+          {message.text}
+        </div>
+      )}
 
       {/* Profile Settings */}
       <div className="rounded-lg border bg-card shadow-sm">
@@ -51,7 +253,8 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
             <label className="text-sm font-medium mb-2 block">Full Name</label>
             <input
               type="text"
-              defaultValue={user?.name}
+              value={profile.name}
+              onChange={(e) => setProfile({ ...profile, name: e.target.value })}
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             />
           </div>
@@ -61,23 +264,56 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
             </label>
             <input
               type="email"
-              defaultValue={user?.email}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              value={user?.email || ""}
+              disabled
+              className="flex h-10 w-full rounded-md border border-input bg-muted px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground opacity-50 cursor-not-allowed"
             />
+            <p className="text-xs text-muted-foreground mt-1">Email cannot be changed</p>
           </div>
           <div>
             <label className="text-sm font-medium mb-2 block">
               Professional Bio
             </label>
             <textarea
-              defaultValue={user?.bio || ""}
+              value={profile.bio}
+              onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
               placeholder="Tell students about your expertise and teaching experience..."
               rows={4}
               className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             />
           </div>
-          <button className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90">
-            Save Changes
+          <div>
+            <label className="text-sm font-medium mb-2 block">
+              Profile Image URL
+            </label>
+            <input
+              type="url"
+              value={profile.profileImageUrl}
+              onChange={(e) => setProfile({ ...profile, profileImageUrl: e.target.value })}
+              placeholder="https://example.com/your-photo.jpg"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            />
+            <p className="text-xs text-muted-foreground mt-1">Enter a URL to your profile photo</p>
+            {profile.profileImageUrl && (
+              <div className="mt-3">
+                <p className="text-xs font-medium mb-2">Preview:</p>
+                <img 
+                  src={profile.profileImageUrl} 
+                  alt="Profile preview" 
+                  className="w-24 h-24 rounded-full object-cover border-2 border-primary"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = "/placeholder.svg";
+                  }}
+                />
+              </div>
+            )}
+          </div>
+          <button 
+            onClick={handleSaveProfile}
+            disabled={isSaving}
+            className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isSaving ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
       </div>
@@ -97,15 +333,58 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
             </label>
             <input
               type="number"
+              value={profile.hourlyRate}
+              onChange={(e) => setProfile({ ...profile, hourlyRate: parseFloat(e.target.value) || 0 })}
               placeholder="25"
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             />
           </div>
           <div>
             <label className="text-sm font-medium mb-2 block">
+              Specialties
+            </label>
+            <div className="flex gap-2 mb-2">
+              <input
+                type="text"
+                value={newSpecialty}
+                onChange={(e) => setNewSpecialty(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && addSpecialty()}
+                placeholder="Add a specialty (e.g., JavaScript, React)"
+                className="flex h-10 flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              />
+              <button
+                onClick={addSpecialty}
+                className="inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90"
+              >
+                Add
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {profile.specialties.map((specialty) => (
+                <span
+                  key={specialty}
+                  className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-sm"
+                >
+                  {specialty}
+                  <button
+                    onClick={() => removeSpecialty(specialty)}
+                    className="hover:text-destructive"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="text-sm font-medium mb-2 block">
               Availability
             </label>
-            <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+            <select 
+              value={profile.availability}
+              onChange={(e) => setProfile({ ...profile, availability: e.target.value })}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
               <option>Weekdays only</option>
               <option>Weekends only</option>
               <option>Flexible - All days</option>
@@ -115,15 +394,23 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
             <label className="text-sm font-medium mb-2 block">
               Session Duration
             </label>
-            <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+            <select 
+              value={profile.sessionDuration}
+              onChange={(e) => setProfile({ ...profile, sessionDuration: e.target.value })}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
               <option>30 minutes</option>
               <option>1 hour</option>
               <option>2 hours</option>
               <option>Custom</option>
             </select>
           </div>
-          <button className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90">
-            Update Preferences
+          <button 
+            onClick={handleSaveTeachingPreferences}
+            disabled={isSaving}
+            className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isSaving ? 'Saving...' : 'Update Preferences'}
           </button>
         </div>
       </div>
@@ -281,7 +568,11 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
         <div className="p-6 space-y-4">
           <div>
             <label className="text-sm font-medium mb-2 block">Language</label>
-            <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+            <select 
+              value={profile.language}
+              onChange={(e) => setProfile({ ...profile, language: e.target.value })}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
               <option>English</option>
               <option>Spanish</option>
               <option>French</option>
@@ -290,13 +581,24 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
           </div>
           <div>
             <label className="text-sm font-medium mb-2 block">Timezone</label>
-            <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+            <select 
+              value={profile.timezone}
+              onChange={(e) => setProfile({ ...profile, timezone: e.target.value })}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
               <option>UTC-08:00 Pacific Time</option>
               <option>UTC-05:00 Eastern Time</option>
               <option>UTC+00:00 GMT</option>
               <option>UTC+01:00 Central European Time</option>
             </select>
           </div>
+          <button 
+            onClick={handleSaveLanguagePreferences}
+            disabled={isSaving}
+            className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isSaving ? 'Saving...' : 'Save Preferences'}
+          </button>
         </div>
       </div>
 

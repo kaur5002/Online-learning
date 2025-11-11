@@ -58,18 +58,59 @@ const getAuthHeaders = () => {
 
 // Helper function to handle API responses
 const handleResponse = async (response: Response) => {
-  const data = await response.json();
+  let data;
+  const contentType = response.headers.get('content-type');
+  
+  try {
+    const text = await response.text();
+    
+    if (!text || text.trim() === '') {
+      console.error("Response body is empty");
+      console.error("Response status:", response.status);
+      console.error("Response statusText:", response.statusText);
+      console.error("Content-Type:", contentType);
+      throw new Error(`API returned empty response with status ${response.status}: ${response.statusText}`);
+    }
+    
+    console.log("Response text:", text);
+    data = JSON.parse(text);
+  } catch (error) {
+    if (error instanceof SyntaxError) {
+      console.error("Failed to parse response as JSON:", error);
+    } else if (!(error instanceof Error && error.message.includes('empty response'))) {
+      console.error("Error processing response:", error);
+    }
+    console.error("Response status:", response.status);
+    console.error("Response statusText:", response.statusText);
+    console.error("Content-Type:", contentType);
+    
+    if (error instanceof Error && error.message.includes('empty response')) {
+      throw error;
+    }
+    throw new Error(`API request failed with status ${response.status}: ${response.statusText}`);
+  }
 
   if (!response.ok) {
-    console.error("API Error:", data);
+    console.error("API Error data:", data);
+    console.error("API Error data type:", typeof data);
+    console.error("API Error data keys:", Object.keys(data));
+    console.error("Response status:", response.status);
+    console.error("Response statusText:", response.statusText);
+    console.error("Error details:", data.error);
+    console.error("Details field:", data.details);
+    
     if (data.details && Array.isArray(data.details)) {
       // Format validation errors
+      console.error("Validation issues:", JSON.stringify(data.details, null, 2));
       const validationErrors = data.details
         .map((issue: any) => `${issue.path.join(".")}: ${issue.message}`)
         .join(", ");
       throw new Error(`Validation failed: ${validationErrors}`);
     }
-    throw new Error(data.error || data.message || "An error occurred");
+    
+    const errorMessage = data.error || data.message || `Request failed with status ${response.status}`;
+    console.error("Final error message:", errorMessage);
+    throw new Error(errorMessage);
   }
 
   return data;
@@ -77,11 +118,32 @@ const handleResponse = async (response: Response) => {
 
 // Fetch courses for a specific tutor
 export const fetchCourses = async (userId: string): Promise<Course[]> => {
-  const response = await fetch(`${API_BASE}/courses?userId=${userId}`, {
+  const url = `${API_BASE}/courses?userId=${userId}`;
+  console.log("Fetching courses from:", url);
+  console.log("UserId:", userId);
+  
+  const response = await fetch(url, {
     headers: getAuthHeaders(),
   });
 
+  console.log("Courses response status:", response.status);
+  console.log("Courses response ok:", response.ok);
+  
+  // If response is not ok and empty, return empty array
+  if (!response.ok && response.status !== 400) {
+    console.error("Non-400 error, status:", response.status);
+    console.error("Attempting to read error body...");
+    try {
+      const errorText = await response.text();
+      console.error("Error response body:", errorText);
+    } catch (e) {
+      console.error("Could not read error body");
+    }
+    return [];
+  }
+  
   const data = await handleResponse(response);
+  console.log("Courses data:", data);
   return data.data.courses;
 };
 
@@ -114,12 +176,20 @@ export const updateCourse = async (
   courseId: string,
   courseData: UpdateCourseData
 ): Promise<Course> => {
+  console.log("========== updateCourse called ==========");
+  console.log("Updating course:", courseId);
+  console.log("Course data being sent:", JSON.stringify(courseData, null, 2));
+  
   const response = await fetch(`${API_BASE}/courses/${courseId}`, {
     method: "PUT",
     headers: getAuthHeaders(),
     body: JSON.stringify(courseData),
   });
 
+  console.log("Update response status:", response.status);
+  console.log("Update response ok:", response.ok);
+  console.log("Update response headers:", Array.from(response.headers.entries()));
+  
   const data = await handleResponse(response);
   return data.data;
 };

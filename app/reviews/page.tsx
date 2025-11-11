@@ -6,12 +6,25 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { useReviews } from "@/hooks/use-reviews"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Star, Loader2 } from "lucide-react"
 import Image from "next/image"
+import { useAuth } from "@/hooks/use-auth"
 
 export default function ReviewsPage() {
-  const { data: reviews, isLoading } = useReviews()
+  const { user } = useAuth()
+  const [tutorId, setTutorId] = useState<string | undefined>(undefined)
+  
+  // Set tutorId if user is a tutor
+  useEffect(() => {
+    if (user?.role === "tutor") {
+      setTutorId(user.id)
+    } else {
+      setTutorId(undefined)
+    }
+  }, [user])
+  
+  const { data: reviews, isLoading } = useReviews(tutorId)
   const [selectedRating, setSelectedRating] = useState<number | null>(null)
 
   const filteredReviews =
@@ -41,8 +54,14 @@ export default function ReviewsPage() {
         <div className="container py-12">
           <div className="max-w-5xl mx-auto space-y-8">
             <div className="text-center space-y-4">
-              <h1 className="text-4xl font-bold text-foreground">Ratings & Reviews</h1>
-              <p className="text-xl text-muted-foreground">See what our students say about their learning experience</p>
+              <h1 className="text-4xl font-bold text-foreground">
+                {user?.role === "tutor" ? "My Reviews" : "Ratings & Reviews"}
+              </h1>
+              <p className="text-xl text-muted-foreground">
+                {user?.role === "tutor" 
+                  ? "See what your students say about their learning experience with you" 
+                  : "See what our students say about their learning experience"}
+              </p>
             </div>
 
             <div className="grid md:grid-cols-3 gap-6">
@@ -99,8 +118,14 @@ export default function ReviewsPage() {
                           <div className="space-y-1 flex-1">
                             <CardTitle className="text-lg text-foreground">{review.studentName}</CardTitle>
                             <CardDescription>
-                              Session with{" "}
-                              <Link href={`/tutor/${review.tutorId}`} className="text-primary hover:underline">
+                              Course:{" "}
+                              <span className="text-foreground font-medium">{review.courseTitle}</span>
+                              {" • "}
+                              Tutor:{" "}
+                              <Link 
+                                href={`/tutor/${review.tutorId}`} 
+                                className="text-primary hover:underline font-medium"
+                              >
                                 {review.tutorName}
                               </Link>
                             </CardDescription>
@@ -124,8 +149,12 @@ export default function ReviewsPage() {
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-2">
-                      <p className="text-muted-foreground">{review.comment}</p>
-                      <p className="text-sm text-muted-foreground">{new Date(review.createdAt).toLocaleDateString()}</p>
+                      {review.comment && (
+                        <p className="text-muted-foreground">{review.comment}</p>
+                      )}
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(review.createdAt).toLocaleDateString()}
+                      </p>
                     </CardContent>
                   </Card>
                 ))}

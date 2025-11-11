@@ -12,6 +12,7 @@ import {
   Mail,
   Clock,
   AlertCircle,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -85,6 +86,13 @@ export default function ReviewForm() {
     isOpen: false,
     message: "",
   });
+  const [confirmResend, setConfirmResend] = useState<{
+    isOpen: boolean;
+    studentIds: string[];
+  }>({
+    isOpen: false,
+    studentIds: [],
+  });
 
   useEffect(() => {
     fetchCourses();
@@ -97,42 +105,88 @@ export default function ReviewForm() {
     
     try {
       setLoading(true);
-      // Fetch tutor's courses with enrolled students
+      // Fetch tutor's courses
       const response = await axios.get(`/api/courses?userId=${user.id}`);
       const coursesData = response.data.data?.courses || response.data.data || [];
       
-      console.log("Fetched courses:", coursesData); // Debug log
+      console.log("Fetched courses:", coursesData);
       
-      // Ensure it's an array and map to include enrolled students
-      const formattedCourses = Array.isArray(coursesData) 
-        ? coursesData.map((course: any) => {
-            console.log("Processing course:", course.id, course.title);
-            console.log("Enrollments:", course.enrollments);
-            
-            const enrolledStudents = course.enrollments?.map((enrollment: any) => {
-              console.log("Enrollment student data:", enrollment.student);
-              return {
-                id: enrollment.student?.id || enrollment.studentId,
-                name: enrollment.student?.name || 'Unknown Student',
-                email: enrollment.student?.email || '',
-              };
-            }) || [];
-            
-            console.log("Enrolled students for course:", enrolledStudents);
-            
-            return {
-              id: course.id,
-              title: course.title,
-              enrolledStudents,
-            };
-          })
-        : [];
+      // For each course, get students who have made payments
+      const formattedCourses = await Promise.all(
+        Array.isArray(coursesData) 
+          ? coursesData.map(async (course: any) => {
+              console.log("Processing course:", course.id, course.title);
+              
+              // Fetch bookings for this course with payment information
+              try {
+                const bookingsResponse = await axios.get(`/api/bookings?courseId=${course.id}`);
+                const bookings = bookingsResponse.data.data || [];
+                
+                console.log("Bookings for course:", course.id, bookings);
+                
+                // Extract unique students who have completed payments
+                const studentsWithPayments = new Map();
+                
+                bookings.forEach((booking: any) => {
+                  // Check if booking has a completed payment
+                  if (booking.payment?.paymentStatus === 'completed' && booking.learner) {
+                    const studentId = booking.learner.id || booking.learnerId;
+                    if (!studentsWithPayments.has(studentId)) {
+                      studentsWithPayments.set(studentId, {
+                        id: studentId,
+                        name: booking.learner.name || 'Unknown Student',
+                        email: booking.learner.email || '',
+                      });
+                    }
+                  }
+                });
+                
+                // Also include enrolled students (full course payments)
+                if (course.enrollments) {
+                  course.enrollments.forEach((enrollment: any) => {
+                    const studentId = enrollment.student?.id || enrollment.studentId;
+                    if (studentId && !studentsWithPayments.has(studentId)) {
+                      studentsWithPayments.set(studentId, {
+                        id: studentId,
+                        name: enrollment.student?.name || 'Unknown Student',
+                        email: enrollment.student?.email || '',
+                      });
+                    }
+                  });
+                }
+                
+                const enrolledStudents = Array.from(studentsWithPayments.values());
+                
+                console.log("Students with payments for course:", course.id, enrolledStudents);
+                
+                return {
+                  id: course.id,
+                  title: course.title,
+                  enrolledStudents,
+                };
+              } catch (error) {
+                console.error("Error fetching bookings for course:", course.id, error);
+                // Fallback to enrolled students if bookings fetch fails
+                const enrolledStudents = course.enrollments?.map((enrollment: any) => ({
+                  id: enrollment.student?.id || enrollment.studentId,
+                  name: enrollment.student?.name || 'Unknown Student',
+                  email: enrollment.student?.email || '',
+                })) || [];
+                
+                return {
+                  id: course.id,
+                  title: course.title,
+                  enrolledStudents,
+                };
+              }
+            })
+          : []
+      );
       
-      console.log("Formatted courses:", formattedCourses); // Debug log
+      console.log("Formatted courses with students:", formattedCourses);
       setCourses(formattedCourses);
     } catch (error) {
       console.error("Error fetching courses:", error);
-      // Set empty array on error
       setCourses([]);
     } finally {
       setLoading(false);
@@ -166,7 +220,7 @@ export default function ReviewForm() {
     }
   };
 
-  const handleSendReviewRequest = async () => {
+  const handleSendReviewRequest = async (forceResend = false) => {
     if (!selectedCourse || selectedStudents.length === 0) {
       setAlertModal({
         isOpen: true,
@@ -185,6 +239,7 @@ export default function ReviewForm() {
         courseId: selectedCourse,
         studentIds: selectedStudents,
         message: message || "Please share your feedback about the course!",
+        forceResend,
       };
       
       console.log("Sending review request:", requestData);
@@ -196,11 +251,21 @@ export default function ReviewForm() {
       const stats = response.data.stats;
       let successMessage = response.data.message;
       
+      // Check if there are pending duplicates and we haven't forced resend yet
+      if (!forceResend && stats?.pendingDuplicates > 0) {
+        setConfirmResend({
+          isOpen: true,
+          studentIds: selectedStudents,
+        });
+        setSendingRequest(false);
+        return;
+      }
+      
       // Add more details if there were duplicates
       if (stats?.reviewedDuplicates > 0 || stats?.pendingDuplicates > 0) {
         const details = [];
         if (stats.sent > 0) details.push(`✓ ${stats.sent} new request(s) sent`);
-        if (stats.pendingDuplicates > 0) details.push(`⏳ ${stats.pendingDuplicates} already have pending requests`);
+        if (stats.pendingDuplicates > 0) details.push(`⏳ ${stats.pendingDuplicates} request(s) resent`);
         if (stats.reviewedDuplicates > 0) details.push(`✓ ${stats.reviewedDuplicates} already submitted reviews`);
         successMessage = details.join('\n');
       }
@@ -215,6 +280,7 @@ export default function ReviewForm() {
       setSelectedCourse("");
       setSelectedStudents([]);
       setMessage("");
+      fetchPendingReviews();
     } catch (error) {
       console.error("Error sending review requests:", error);
       if (axios.isAxiosError(error)) {
@@ -258,6 +324,33 @@ export default function ReviewForm() {
         isOpen: true,
         message: "Failed to update review. Please try again.",
         title: "Update Failed",
+        type: "error",
+      });
+    }
+  };
+
+  const handleDeleteReview = async (reviewId: string) => {
+    if (!window.confirm("Are you sure you want to delete this review? This action cannot be undone.")) {
+      return;
+    }
+
+    try {
+      await axios.delete(`/api/reviews?reviewId=${reviewId}&tutorId=${user?.id}`);
+      setAlertModal({
+        isOpen: true,
+        message: "Review has been deleted successfully!",
+        title: "Review Deleted",
+        type: "success",
+      });
+      // Refresh both pending and recent reviews
+      fetchPendingReviews();
+      fetchRecentReviews();
+    } catch (error: any) {
+      console.error("Error deleting review:", error);
+      setAlertModal({
+        isOpen: true,
+        message: error.response?.data?.error || "Failed to delete review. Please try again.",
+        title: "Delete Failed",
         type: "error",
       });
     }
@@ -425,7 +518,7 @@ export default function ReviewForm() {
 
           {/* Send Button */}
           <Button
-            onClick={handleSendReviewRequest}
+            onClick={() => handleSendReviewRequest(false)}
             disabled={
               loading ||
               !selectedCourse ||
@@ -524,6 +617,15 @@ export default function ReviewForm() {
                     <Button
                       size="sm"
                       variant="outline"
+                      onClick={() => handleDeleteReview(review.id)}
+                      className="text-gray-600 hover:bg-gray-50"
+                    >
+                      <Trash2 className="mr-1 h-4 w-4" />
+                      Delete
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
                       onClick={() => handleReviewAction(review.id, "reject")}
                       className="text-red-600 hover:bg-red-50"
                     >
@@ -556,103 +658,6 @@ export default function ReviewForm() {
         )}
       </Card>
 
-      {/* Recent Reviews Section */}
-      <Card className="p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Star className="h-5 w-5 text-primary" />
-            <h3 className="text-lg font-semibold">Recent Reviews</h3>
-          </div>
-          <span className="text-sm text-muted-foreground">
-            {recentReviews.length} total
-          </span>
-        </div>
-
-        {recentReviews.length > 0 ? (
-          <div className="space-y-4">
-            {recentReviews.map((review) => (
-              <div
-                key={review.id}
-                className="p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="flex items-center gap-1">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <Star
-                            key={star}
-                            className={`h-4 w-4 ${
-                              star <= review.rating
-                                ? "fill-yellow-400 text-yellow-400"
-                                : "text-gray-300"
-                            }`}
-                          />
-                        ))}
-                      </div>
-                      <span className="text-sm font-medium">
-                        {review.rating}/5
-                      </span>
-                      <span
-                        className={`text-xs px-2 py-1 rounded-full ${
-                          review.status === "accepted"
-                            ? "bg-green-100 text-green-700"
-                            : review.status === "rejected"
-                            ? "bg-red-100 text-red-700"
-                            : "bg-yellow-100 text-yellow-700"
-                        }`}
-                      >
-                        {review.status.charAt(0).toUpperCase() + review.status.slice(1)}
-                      </span>
-                    </div>
-
-                    <p className="text-sm font-medium mb-1">
-                      {review.course.title}
-                    </p>
-                    
-                    {review.comment && (
-                      <p className="text-sm text-muted-foreground mb-2">
-                        "{review.comment}"
-                      </p>
-                    )}
-
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <MessageSquare className="h-3 w-3" />
-                        <span>{review.reviewer.name}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        <span>
-                          {new Date(review.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                      {review.approvedAt && (
-                        <div className="flex items-center gap-1">
-                          <CheckCircle className="h-3 w-3" />
-                          <span>
-                            Approved {new Date(review.approvedAt).toLocaleDateString()}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <Star className="h-12 w-12 text-muted-foreground mb-4" />
-            <p className="text-sm text-muted-foreground mb-2">
-              No reviews yet
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Reviews from students will appear here
-            </p>
-          </div>
-        )}
-      </Card>
 
       
       
@@ -663,6 +668,53 @@ export default function ReviewForm() {
         title={alertModal.title}
         type={alertModal.type}
       />
+
+      {/* Confirmation Modal for Resending */}
+      {confirmResend.isOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <Card className="w-full max-w-md p-6">
+            <div className="space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-100">
+                  <AlertCircle className="h-5 w-5 text-yellow-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold mb-2">Review Request Already Sent</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {confirmResend.studentIds.length === 1 
+                      ? "This student already has a pending review request." 
+                      : "Some of these students already have pending review requests."}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Do you want to send the review request again? This will remind them to submit their feedback.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => {
+                    setConfirmResend({ isOpen: false, studentIds: [] });
+                  }}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => {
+                    setConfirmResend({ isOpen: false, studentIds: [] });
+                    handleSendReviewRequest(true);
+                  }}
+                  className="flex-1"
+                >
+                  Yes, Send Again
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

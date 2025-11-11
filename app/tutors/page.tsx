@@ -126,8 +126,8 @@ export default function TutorsPage() {
                         <span className="text-muted-foreground">{tutor.studentsCount} students</span>
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        {tutor.specialties.slice(0, 3).map((specialty) => (
-                          <Badge key={specialty} variant="secondary" className="text-xs">
+                        {tutor.specialties.slice(0, 3).map((specialty, index) => (
+                          <Badge key={`${tutor.id}-${specialty}-${index}`} variant="secondary" className="text-xs">
                             {specialty}
                           </Badge>
                         ))}
@@ -153,9 +153,7 @@ export default function TutorsPage() {
                           >
                             View Profile
                           </Button>
-                          <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">
-                            Book Session
-                          </Button>
+                          
                         </div>
                       </div>
                     </CardContent>

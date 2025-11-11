@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { Star, ThumbsUp, MessageSquare, TrendingUp, Send, Loader2, AlertCircle } from "lucide-react";
+import { Star, ThumbsUp, MessageSquare, TrendingUp, Send, Loader2, AlertCircle, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { AlertModal } from "@/components/alert-modal";
@@ -57,6 +57,8 @@ export default function Reviews() {
   const [myReviews, setMyReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [submittingId, setSubmittingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [selectedRequest, setSelectedRequest] = useState<ReviewRequest | null>(null);
   const [rating, setRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
@@ -164,21 +166,50 @@ export default function Reviews() {
       console.error("Error submitting review:", error);
       console.error("Error response:", error.response?.data);
       console.error("Error status:", error.response?.status);
+      console.error("Error statusText:", error.response?.statusText);
       console.error("Full error object:", JSON.stringify(error.response, null, 2));
       
-      const errorMessage = error.response?.data?.error || 
-                          error.response?.data?.details ||
+      // Get all possible error information
+      const errorData = error.response?.data;
+      console.log("Raw error data:", errorData);
+      console.log("Error data type:", typeof errorData);
+      console.log("Error data keys:", errorData ? Object.keys(errorData) : "no data");
+      
+      const errorMessage = errorData?.error || 
+                          errorData?.details ||
+                          errorData?.message ||
                           error.message || 
                           "Failed to submit review. Please try again.";
       
-      // Check if it's a duplicate review error
+      const errorDetails = errorData?.details ? `\n\nDetails: ${errorData.details}` : "";
+      const fullErrorMessage = errorMessage + errorDetails;
+      
+      console.log("Displaying error message:", fullErrorMessage);
+      
+      // Check for specific error types
       const isDuplicate = errorMessage.includes("already submitted a review");
+      const isFutureSession = errorMessage.includes("before attending the session");
+      const isNotEnrolled = errorMessage.includes("must be enrolled") || errorMessage.includes("have booked a session");
+      
+      let title = "Submission Failed";
+      let type: "error" | "warning" | "info" = "error";
+      
+      if (isDuplicate) {
+        title = "Review Already Submitted";
+        type = "info";
+      } else if (isFutureSession) {
+        title = "Session Not Yet Attended";
+        type = "warning";
+      } else if (isNotEnrolled) {
+        title = "Enrollment Required";
+        type = "warning";
+      }
       
       setAlertModal({
         isOpen: true,
-        message: errorMessage,
-        title: isDuplicate ? "Review Already Submitted" : "Submission Failed",
-        type: isDuplicate ? "info" : "error",
+        message: fullErrorMessage,
+        title: title,
+        type: type,
       });
       
       // If duplicate, still refresh to remove it from the list
@@ -190,6 +221,39 @@ export default function Reviews() {
       }
     } finally {
       setSubmittingId(null);
+    }
+  };
+
+  const handleDeleteReview = async (reviewId: string) => {
+    try {
+      setDeletingId(reviewId);
+      
+      await axios.delete(`/api/review-requests?requestId=${reviewId}&studentId=${user?.id}`);
+      
+      setAlertModal({
+        isOpen: true,
+        message: "Review request has been deleted successfully.",
+        title: "Request Deleted",
+        type: "success",
+      });
+      
+      setConfirmDelete(null);
+      
+      // Refresh data
+      fetchReviewRequests();
+    } catch (error: any) {
+      console.error("Error deleting review request:", error);
+      
+      const errorMessage = error.response?.data?.error || error.message || "Failed to delete review request. Please try again.";
+      
+      setAlertModal({
+        isOpen: true,
+        message: errorMessage,
+        title: "Deletion Failed",
+        type: "error",
+      });
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -319,14 +383,25 @@ export default function Reviews() {
                         Requested on {new Date(request.sentAt).toLocaleDateString()}
                       </p>
                     </div>
-                    <Button
-                      onClick={() => setSelectedRequest(request)}
-                      size="sm"
-                      disabled={submittingId !== null}
-                    >
-                      <Send className="h-4 w-4 mr-2" />
-                      Leave Review
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => setSelectedRequest(request)}
+                        size="sm"
+                        disabled={submittingId !== null || deletingId !== null}
+                      >
+                        <Send className="h-4 w-4 mr-2" />
+                        Leave Review
+                      </Button>
+                      <Button
+                        onClick={() => setConfirmDelete(request.id)}
+                        variant="outline"
+                        size="sm"
+                        disabled={submittingId !== null || deletingId !== null}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </Card>
               ))}
@@ -489,6 +564,47 @@ export default function Reviews() {
         </div>
       </div>
 
+      {/* Delete Confirmation Modal */}
+      {confirmDelete && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <Card className="w-full max-w-md">
+            <div className="p-6">
+              <h3 className="text-xl font-semibold mb-4">Delete Review Request?</h3>
+              <p className="text-muted-foreground mb-6">
+                Are you sure you want to delete this review request? This action cannot be undone.
+              </p>
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => handleDeleteReview(confirmDelete)}
+                  variant="destructive"
+                  disabled={deletingId !== null}
+                  className="flex-1"
+                >
+                  {deletingId === confirmDelete ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete
+                    </>
+                  )}
+                </Button>
+                <Button
+                  onClick={() => setConfirmDelete(null)}
+                  variant="outline"
+                  disabled={deletingId !== null}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
       
       <AlertModal
         isOpen={alertModal.isOpen}

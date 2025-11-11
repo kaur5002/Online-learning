@@ -57,6 +57,8 @@ export default function CourseFormModal({
         zoomLink: undefined,
         trialRate: 0,
         fullCourseRate: 0,
+        startDate: undefined,
+        endDate: undefined,
     });
 
     const [newPrerequisite, setNewPrerequisite] = useState("");
@@ -78,6 +80,8 @@ export default function CourseFormModal({
                 imageUrl: course.imageUrl,
                 trialRate: course.trialRate,
                 fullCourseRate: course.fullCourseRate,
+                startDate: course.startDate ? course.startDate.split('T')[0] : undefined,
+                endDate: course.endDate ? course.endDate.split('T')[0] : undefined,
             });
         } else {
             setFormData({
@@ -99,6 +103,8 @@ export default function CourseFormModal({
                 zoomLink: undefined,
                 trialRate: 0,
                 fullCourseRate: 0,
+                startDate: undefined,
+                endDate: undefined,
             });
         }
     }, [course, isOpen]);
@@ -141,6 +147,8 @@ export default function CourseFormModal({
                 zoomLink: formData.zoomLink?.trim() || undefined,
                 categoryId: formData.categoryId || undefined,
                 imageUrl: formData.imageUrl?.trim() || undefined,
+                startDate: formData.startDate?.trim() || undefined,
+                endDate: formData.endDate?.trim() || undefined,
             };
 
             await onSubmit(cleanedData);
@@ -346,6 +354,31 @@ export default function CourseFormModal({
                                 onChange={(e) => setFormData(prev => ({ ...prev, totalHours: parseInt(e.target.value) }))}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium mb-2">Start Date</label>
+                                <input
+                                    type="date"
+                                    value={formData.startDate || ""}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value || undefined }))}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                                <p className="text-xs text-gray-500 mt-1">Optional: When does the course begin?</p>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium mb-2">End Date</label>
+                                <input
+                                    type="date"
+                                    value={formData.endDate || ""}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value || undefined }))}
+                                    min={formData.startDate || ""}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                                <p className="text-xs text-gray-500 mt-1">Optional: When does the course end?</p>
+                            </div>
                         </div>
                     </div>
 

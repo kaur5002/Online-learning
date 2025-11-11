@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { BookOpen, Calendar, Star, Settings, Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -18,8 +18,17 @@ const menuItems = [
 
 export default function Sidebar({ activeTab, onTabChange }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const toggleSidebar = () => setIsOpen(!isOpen);
+
+  if (!isMounted) {
+    return null;
+  }
 
   return (
     <>

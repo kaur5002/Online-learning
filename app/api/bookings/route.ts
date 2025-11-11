@@ -165,6 +165,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const learnerId = searchParams.get("learnerId");
     const tutorId = searchParams.get("tutorId");
+    const courseId = searchParams.get("courseId");
 
     const where: any = {};
 
@@ -174,6 +175,10 @@ export async function GET(request: NextRequest) {
 
     if (tutorId) {
       where.tutorId = tutorId;
+    }
+
+    if (courseId) {
+      where.courseId = courseId;
     }
 
     const bookings = await prisma.booking.findMany({
@@ -204,6 +209,10 @@ export async function GET(request: NextRequest) {
             id: true,
             title: true,
             imageUrl: true,
+            startDate: true,
+            endDate: true,
+            schedule: true,
+            zoomLink: true,
           },
         },
         payment: true,

@@ -40,7 +40,9 @@ export interface Review {
   comment: string
   studentName: string
   studentAvatar: string
+  courseTitle?: string
   createdAt: Date
+  status?: string
 }
 
 export interface BookingSession {

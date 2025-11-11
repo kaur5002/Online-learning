@@ -14,6 +14,11 @@ export default function LearnerDashboard() {
   const searchParams = useSearchParams();
   const { user, isAuthenticated, isLoading } = useAuth();
   const [activeTab, setActiveTab] = useState("skills");
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     // Check for tab parameter in URL
@@ -54,6 +59,17 @@ export default function LearnerDashboard() {
   };
 
   if (isLoading || !isAuthenticated || user?.role !== "learner") {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isMounted) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
