@@ -7,19 +7,25 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { AlertModal } from "@/components/alert-modal"
 import { LoginModal } from "@/components/login-modal"
+import { SessionTypeModal } from "@/components/session-type-modal"
 import Link from "next/link"
 import { useTutorDetail } from "@/hooks/use-tutor-detail"
 import { useAuth } from "@/hooks/use-auth"
-import { useParams } from "next/navigation"
+import { useCheckout } from "@/hooks/use-checkout"
+import { useParams, useRouter } from "next/navigation"
 import { Loader2, Star, Users, Clock, MessageSquare } from "lucide-react"
 import Image from "next/image"
 
 export default function TutorProfilePage() {
   const params = useParams()
+  const router = useRouter()
   const tutorId = params.id as string
   const { data, isLoading } = useTutorDetail(tutorId)
   const { isAuthenticated, user } = useAuth()
+  const { handleCheckout, loading: checkoutLoading } = useCheckout()
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
+  const [isSessionTypeModalOpen, setIsSessionTypeModalOpen] = useState(false)
+  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null)
   const [alertModal, setAlertModal] = useState<{
     isOpen: boolean;
     message: string;
@@ -30,7 +36,7 @@ export default function TutorProfilePage() {
     message: "",
   })
 
-  const handleEnrollClick = () => {
+  const handleEnrollClick = (courseId?: string) => {
     if (!isAuthenticated) {
       setIsLoginModalOpen(true)
       return
@@ -46,17 +52,21 @@ export default function TutorProfilePage() {
       return
     }
 
-    // If user is a learner, proceed with enrollment logic
-    // TODO: Implement enrollment logic here
-    setAlertModal({
-      isOpen: true,
-      message: "Enrollment functionality coming soon! You'll be able to enroll in courses directly from this page.",
-      title: "Coming Soon",
-      type: "info",
-    })
+    // If courseId is provided, navigate to course page
+    if (courseId) {
+      router.push(`/course/${courseId}`)
+    } else {
+      // Show message to select a specific course
+      setAlertModal({
+        isOpen: true,
+        message: "Please select a specific course from the list below to enroll.",
+        title: "Select a Course",
+        type: "info",
+      })
+    }
   }
 
-  const handleBookSession = () => {
+  const handleBookSession = (courseId?: string) => {
     if (!isAuthenticated) {
       setIsLoginModalOpen(true)
       return
@@ -72,14 +82,48 @@ export default function TutorProfilePage() {
       return
     }
 
-    // If user is a learner, proceed with booking logic
-    // TODO: Implement booking logic here
-    setAlertModal({
-      isOpen: true,
-      message: "Session booking functionality coming soon! You'll be able to schedule one-on-one sessions with tutors.",
-      title: "Coming Soon",
-      type: "info",
-    })
+    // If courseId is provided, navigate to course page
+    if (courseId) {
+      router.push(`/course/${courseId}`)
+    } else {
+      // Show message to select a specific course
+      setAlertModal({
+        isOpen: true,
+        message: "Please select a specific course from the list below to book a session.",
+        title: "Select a Course",
+        type: "info",
+      })
+    }
+  }
+
+  const handleCourseEnrollClick = (courseId: string, courseName: string, amount: number) => {
+    if (!isAuthenticated) {
+      setIsLoginModalOpen(true)
+      return
+    }
+
+    if (user?.role !== "learner") {
+      setAlertModal({
+        isOpen: true,
+        message: "Only learners can enroll in courses. Please sign up as a learner account to book sessions and enroll in courses.",
+        title: "Learner Access Required",
+        type: "error",
+      })
+      return
+    }
+
+    // Set selected course and show session type modal
+    setSelectedCourseId(courseId)
+    setIsSessionTypeModalOpen(true)
+  }
+
+  const handleSessionTypeSelect = (sessionType: "individual" | "group") => {
+    setIsSessionTypeModalOpen(false)
+    
+    // Navigate to course detail page
+    if (selectedCourseId) {
+      router.push(`/course/${selectedCourseId}`)
+    }
   }
 
   if (isLoading) {
@@ -132,8 +176,8 @@ export default function TutorProfilePage() {
                   <div className="flex-1 pt-8">
                     <h1 className="text-4xl font-bold text-foreground mb-2">{tutor.name}</h1>
                     <div className="flex flex-wrap gap-2 mb-4">
-                      {tutor.specialties.map((specialty) => (
-                        <Badge key={specialty} variant="secondary">
+                      {tutor.specialties.map((specialty, index) => (
+                        <Badge key={`${tutor.id}-${specialty}-${index}`} variant="secondary">
                           {specialty}
                         </Badge>
                       ))}
@@ -161,11 +205,11 @@ export default function TutorProfilePage() {
                       <p className="text-sm text-muted-foreground">per hour</p>
                     </div> */}
            
-                    <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90" onClick={handleEnrollClick}>
+                    <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90" onClick={() => handleEnrollClick()}>
                       <MessageSquare className="mr-2 h-5 w-5" />
                       Enroll now
                     </Button>
-                    <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90" onClick={handleBookSession}>
+                    <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90" onClick={() => handleBookSession()}>
                       <MessageSquare className="mr-2 h-5 w-5" />
                       Book a tutorial
                     </Button>
@@ -225,7 +269,7 @@ export default function TutorProfilePage() {
                           </div>
                           <span className="font-bold text-primary">${skill.price}</span>
                         </div>
-                        <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90" onClick={handleEnrollClick}>
+                        <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90" onClick={() => handleCourseEnrollClick(skill.id, skill.title, skill.price)}>
                           Enroll Now
                         </Button>
                       </CardContent>
@@ -246,6 +290,12 @@ export default function TutorProfilePage() {
       <LoginModal
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
+      />
+      <SessionTypeModal
+        isOpen={isSessionTypeModalOpen}
+        onClose={() => setIsSessionTypeModalOpen(false)}
+        onSelect={handleSessionTypeSelect}
+        courseName={data?.skills.find(s => s.id === selectedCourseId)?.title || "this course"}
       />
       <AlertModal
         isOpen={alertModal.isOpen}

@@ -5,19 +5,30 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
-import { useSkills } from "@/hooks/use-skills"
+import { useCourses } from "@/hooks/use-courses"
 import { useTutors } from "@/hooks/use-tutors"
 import { useRouter } from "next/navigation"
-import { Loader2 } from "lucide-react"
+import { Loader2, Star } from "lucide-react"
 import Image from "next/image"
+import { useMemo } from "react"
 
 export default function LatestPage() {
-  const { data: skills, isLoading: skillsLoading } = useSkills()
+  // Calculate date one month ago
+  const oneMonthAgo = useMemo(() => {
+    const date = new Date();
+    date.setMonth(date.getMonth() - 1);
+    return date.toISOString();
+  }, []);
+
+  // Fetch courses created in the last month
+  const { data: courses, isLoading: coursesLoading } = useCourses({
+    createdAfter: oneMonthAgo,
+    limit: 50
+  });
+
   const { data: tutors, isLoading: tutorsLoading } = useTutors()
   const router = useRouter()
 
-  const latestSkills =
-    skills?.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 6) || []
   const newTutors = tutors?.slice(0, 3) || []
 
   return (
@@ -29,69 +40,75 @@ export default function LatestPage() {
             <div className="text-center space-y-4">
               <h1 className="text-4xl font-bold text-foreground">Latest Sessions & Updates</h1>
               <p className="text-xl text-muted-foreground">
-                Discover newly added courses and join the newest instructors
+                Discover newly added courses from the past month and join the newest instructors
               </p>
             </div>
 
             <div className="space-y-6">
               <h2 className="text-2xl font-bold text-foreground">Latest Courses</h2>
 
-              {skillsLoading ? (
+              {coursesLoading ? (
                 <div className="flex justify-center py-12">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
-              ) : (
+              ) : courses && courses.length > 0 ? (
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {latestSkills.map((skill) => (
-                    <Card key={skill.id} className="hover:shadow-lg transition-shadow overflow-hidden flex flex-col">
+                  {courses.map((course) => (
+                    <Card key={course.id} className="hover:shadow-lg transition-shadow overflow-hidden flex flex-col">
                       <div className="relative w-full aspect-4/3 overflow-hidden bg-muted">
                         <Image
-                          src={skill.image || "/placeholder.svg"}
-                          alt={skill.title}
+                          src={course.imageUrl || "/placeholder.svg"}
+                          alt={course.title}
                           fill
                           className="object-cover object-center"
                           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                          priority={false}
                         />
                         <Badge className="absolute top-3 right-3 bg-accent text-accent-foreground">New</Badge>
                       </div>
                       <CardHeader>
                         <div className="flex justify-between items-start gap-2">
                           <div className="flex-1">
-                            <CardTitle className="text-lg text-foreground">{skill.title}</CardTitle>
-                            <CardDescription className="text-sm">{skill.category}</CardDescription>
+                            <CardTitle className="text-lg text-foreground">{course.title}</CardTitle>
+                            <CardDescription className="text-sm">{course.category?.name || "Uncategorized"}</CardDescription>
                           </div>
-                          <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">{skill.level}</span>
+                          <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded capitalize">{course.difficulty}</span>
                         </div>
                       </CardHeader>
                       <CardContent className="space-y-4">
-                        <p className="text-sm text-muted-foreground line-clamp-2">{skill.description}</p>
+                        <p className="text-sm text-muted-foreground line-clamp-2">{course.shortDescription}</p>
                         <div className="flex items-center justify-between text-sm">
                           <div className="flex items-center gap-1">
-                            <span className="font-semibold">{skill.rating}</span>
-                            <span className="text-muted-foreground">({skill.reviews})</span>
+                            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                            <span className="font-semibold">4.5</span>
+                            <span className="text-muted-foreground">({course._count?.reviews || 0})</span>
                           </div>
-                          <span className="font-bold text-primary">${skill.price}</span>
+                          <span className="font-bold text-primary">${course.fullCourseRate}</span>
                         </div>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <Image
-                            src={skill.tutorAvatar || "/placeholder.svg"}
-                            alt={skill.tutorName}
+                            src={course.tutor?.user.profileImageUrl || "/placeholder.svg"}
+                            alt={course.tutor?.user.name || "Tutor"}
                             width={24}
                             height={24}
                             className="rounded-full"
                           />
-                          <Link href={`/tutor/${skill.tutorId}`} className="hover:text-primary">
-                            {skill.tutorName}
+                          <Link href={`/tutor/${course.tutorId}`} className="hover:text-primary">
+                            {course.tutor?.user.name || "Unknown Tutor"}
                           </Link>
                         </div>
                         <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
-                          <Link href={`/course/${skill.id}`} className="w-full">
+                          <Link href={`/course/${course.id}`} className="w-full">
                             View Course
                           </Link>
                         </Button>
                       </CardContent>
                     </Card>
                   ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <p className="text-muted-foreground">No new courses added in the past month.</p>
                 </div>
               )}
             </div>

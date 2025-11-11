@@ -73,6 +73,8 @@ export const courseQuerySchema = z.object({
   categoryId: z.string().optional(),
   tutorId: z.string().optional(),
   userId: z.string().optional(),
+  createdAfter: z.string().optional(),
+  createdBefore: z.string().optional(),
 });
 
 export type CreateCourseInput = z.infer<typeof createCourseSchema>;

@@ -34,6 +34,12 @@ model Tutor {
   user            User       @relation(fields: [userId], references: [id])
   userId          String     @unique @db.ObjectId
   bio             String
+  hourlyRate      Float?
+  specialties     String[]   @default([])
+  availability    String?    // e.g., "weekdays", "weekends", "flexible"
+  sessionDuration String?    // e.g., "30min", "1hour", "2hours"
+  language        String?    @default("English")
+  timezone        String?    @default("UTC-08:00 Pacific Time")
   createdAt       DateTime   @default(now())
 
   courses        Course[]

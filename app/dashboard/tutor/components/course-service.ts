@@ -58,10 +58,19 @@ const getAuthHeaders = () => {
 
 // Helper function to handle API responses
 const handleResponse = async (response: Response) => {
-  const data = await response.json();
+  let data;
+  try {
+    data = await response.json();
+  } catch (error) {
+    console.error("Failed to parse response as JSON:", error);
+    console.error("Response status:", response.status);
+    console.error("Response statusText:", response.statusText);
+    throw new Error(`API request failed with status ${response.status}: ${response.statusText}`);
+  }
 
   if (!response.ok) {
     console.error("API Error:", data);
+    console.error("Response status:", response.status);
     if (data.details && Array.isArray(data.details)) {
       // Format validation errors
       const validationErrors = data.details
@@ -69,7 +78,7 @@ const handleResponse = async (response: Response) => {
         .join(", ");
       throw new Error(`Validation failed: ${validationErrors}`);
     }
-    throw new Error(data.error || data.message || "An error occurred");
+    throw new Error(data.error || data.message || `Request failed with status ${response.status}`);
   }
 
   return data;
@@ -77,11 +86,32 @@ const handleResponse = async (response: Response) => {
 
 // Fetch courses for a specific tutor
 export const fetchCourses = async (userId: string): Promise<Course[]> => {
-  const response = await fetch(`${API_BASE}/courses?userId=${userId}`, {
+  const url = `${API_BASE}/courses?userId=${userId}`;
+  console.log("Fetching courses from:", url);
+  console.log("UserId:", userId);
+  
+  const response = await fetch(url, {
     headers: getAuthHeaders(),
   });
 
+  console.log("Courses response status:", response.status);
+  console.log("Courses response ok:", response.ok);
+  
+  // If response is not ok and empty, return empty array
+  if (!response.ok && response.status !== 400) {
+    console.error("Non-400 error, status:", response.status);
+    console.error("Attempting to read error body...");
+    try {
+      const errorText = await response.text();
+      console.error("Error response body:", errorText);
+    } catch (e) {
+      console.error("Could not read error body");
+    }
+    return [];
+  }
+  
   const data = await handleResponse(response);
+  console.log("Courses data:", data);
   return data.data.courses;
 };
 

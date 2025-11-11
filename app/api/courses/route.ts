@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const { page, limit, search, difficulty, categoryId, tutorId, userId } =
+    const { page, limit, search, difficulty, categoryId, tutorId, userId, createdAfter, createdBefore } =
       validationResult.data;
     const skip = (page - 1) * limit;
 
@@ -33,9 +33,9 @@ export async function GET(request: NextRequest) {
 
     if (search) {
       where.OR = [
-        { title: { contains: search, mode: "insensitive" } },
-        { shortDescription: { contains: search, mode: "insensitive" } },
-        { overview: { contains: search, mode: "insensitive" } },
+        { title: { contains: search } },
+        { shortDescription: { contains: search } },
+        { overview: { contains: search } },
       ];
     }
 
@@ -61,6 +61,17 @@ export async function GET(request: NextRequest) {
       } else {
         // If no tutor found for this userId, return empty results
         where.tutorId = "non-existent-id";
+      }
+    }
+
+    // Filter by creation date
+    if (createdAfter || createdBefore) {
+      where.createdAt = {};
+      if (createdAfter) {
+        where.createdAt.gte = new Date(createdAfter);
+      }
+      if (createdBefore) {
+        where.createdAt.lte = new Date(createdBefore);
       }
     }
 
@@ -123,8 +134,12 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Error fetching courses:", error);
+    console.error("Error details:", error instanceof Error ? error.message : "Unknown error");
     return NextResponse.json(
-      { error: "Failed to fetch courses" },
+      { 
+        error: "Failed to fetch courses",
+        details: error instanceof Error ? error.message : "Unknown error"
+      },
       { status: 500 }
     );
   }
