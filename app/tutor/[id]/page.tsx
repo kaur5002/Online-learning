@@ -7,11 +7,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { AlertModal } from "@/components/alert-modal"
 import { LoginModal } from "@/components/login-modal"
-import { SessionTypeModal } from "@/components/session-type-modal"
 import Link from "next/link"
 import { useTutorDetail } from "@/hooks/use-tutor-detail"
 import { useAuth } from "@/hooks/use-auth"
-import { useCheckout } from "@/hooks/use-checkout"
 import { useParams, useRouter } from "next/navigation"
 import { Loader2, Star, Users, Clock, MessageSquare } from "lucide-react"
 import Image from "next/image"
@@ -22,10 +20,8 @@ export default function TutorProfilePage() {
   const tutorId = params.id as string
   const { data, isLoading } = useTutorDetail(tutorId)
   const { isAuthenticated, user } = useAuth()
-  const { handleCheckout, loading: checkoutLoading } = useCheckout()
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [isSessionTypeModalOpen, setIsSessionTypeModalOpen] = useState(false)
-  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null)
   const [alertModal, setAlertModal] = useState<{
     isOpen: boolean;
     message: string;
@@ -93,36 +89,6 @@ export default function TutorProfilePage() {
         title: "Select a Course",
         type: "info",
       })
-    }
-  }
-
-  const handleCourseEnrollClick = (courseId: string, courseName: string, amount: number) => {
-    if (!isAuthenticated) {
-      setIsLoginModalOpen(true)
-      return
-    }
-
-    if (user?.role !== "learner") {
-      setAlertModal({
-        isOpen: true,
-        message: "Only learners can enroll in courses. Please sign up as a learner account to book sessions and enroll in courses.",
-        title: "Learner Access Required",
-        type: "error",
-      })
-      return
-    }
-
-    // Set selected course and show session type modal
-    setSelectedCourseId(courseId)
-    setIsSessionTypeModalOpen(true)
-  }
-
-  const handleSessionTypeSelect = (sessionType: "individual" | "group") => {
-    setIsSessionTypeModalOpen(false)
-    
-    // Navigate to course detail page
-    if (selectedCourseId) {
-      router.push(`/course/${selectedCourseId}`)
     }
   }
 
@@ -269,9 +235,11 @@ export default function TutorProfilePage() {
                           </div>
                           <span className="font-bold text-primary">${skill.price}</span>
                         </div>
-                        <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90" onClick={() => handleCourseEnrollClick(skill.id, skill.title, skill.price)}>
-                          Enroll Now
-                        </Button>
+                        <Link href={`/course/${skill.id}`} className="w-full">
+                          <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
+                            View Course
+                          </Button>
+                        </Link>
                       </CardContent>
                     </Card>
                   ))}
@@ -290,12 +258,6 @@ export default function TutorProfilePage() {
       <LoginModal
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
-      />
-      <SessionTypeModal
-        isOpen={isSessionTypeModalOpen}
-        onClose={() => setIsSessionTypeModalOpen(false)}
-        onSelect={handleSessionTypeSelect}
-        courseName={data?.skills.find(s => s.id === selectedCourseId)?.title || "this course"}
       />
       <AlertModal
         isOpen={alertModal.isOpen}

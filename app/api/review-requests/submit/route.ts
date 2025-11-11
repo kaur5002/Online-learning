@@ -74,23 +74,14 @@ export async function POST(request: NextRequest) {
 
     // Check if a review already exists for this student and course
     // Note: Reviews require a bookingId, but since we're creating from a review request,
-    // we need to find an enrollment or create a dummy booking
-    // For now, let's find the enrollment
-    const enrollment = await prisma.enrollment.findFirst({
-      where: {
-        studentId: reviewRequest.studentId,
-        courseId: reviewRequest.courseId,
-      },
-    });
-
-    if (!enrollment) {
-      return NextResponse.json(
-        { error: "You must be enrolled in this course to leave a review" },
-        { status: 403 }
-      );
-    }
-
-    // Check if there's already a booking for this enrollment
+    // we need to find an enrollment or booking
+    
+    console.log("=== Checking student eligibility ===");
+    console.log("Student ID:", reviewRequest.studentId);
+    console.log("Course ID:", reviewRequest.courseId);
+    console.log("Tutor ID:", reviewRequest.tutorId);
+    
+    // First, check if there's a booking for this student and course
     let booking = await prisma.booking.findFirst({
       where: {
         learnerId: reviewRequest.studentId,
@@ -102,8 +93,65 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // If no booking exists, create one for the review
+    console.log("Booking found:", booking ? "Yes" : "No");
+    if (booking) {
+      console.log("Booking details:", {
+        id: booking.id,
+        sessionDate: booking.sessionDate,
+        status: booking.status,
+        sessionType: booking.sessionType,
+      });
+    }
+
+    // Check if the booking exists and if the session date has passed
+    if (booking) {
+      const sessionDate = new Date(booking.sessionDate);
+      const now = new Date();
+      
+      console.log("Session date:", sessionDate);
+      console.log("Current date:", now);
+      console.log("Session in future?", sessionDate > now);
+      
+      if (sessionDate > now) {
+        console.error("Session date is in the future - review not allowed");
+        return NextResponse.json(
+          { error: "You cannot submit a review before attending the session. Please wait until after your scheduled session on " + sessionDate.toLocaleDateString() + "." },
+          { status: 403 }
+        );
+      }
+    }
+
+    // Check for enrollment
+    const enrollment = await prisma.enrollment.findFirst({
+      where: {
+        studentId: reviewRequest.studentId,
+        courseId: reviewRequest.courseId,
+      },
+    });
+
+    console.log("Enrollment found:", enrollment ? "Yes" : "No");
+    if (enrollment) {
+      console.log("Enrollment details:", {
+        id: enrollment.id,
+        enrolledAt: enrollment.enrolledAt,
+        progress: enrollment.progress,
+      });
+    }
+
+    // If no enrollment and no booking, user hasn't purchased the course
+    if (!enrollment && !booking) {
+      console.error("No enrollment or booking found - review not allowed");
+      return NextResponse.json(
+        { error: "You must be enrolled in this course or have booked a session to leave a review." },
+        { status: 403 }
+      );
+    }
+
+    console.log("=== Student is eligible to review ===");
+
+    // If no booking exists, create one for the review (for enrolled students)
     if (!booking) {
+      console.log("Creating booking for enrolled student to attach review");
       booking = await prisma.booking.create({
         data: {
           learnerId: reviewRequest.studentId,
@@ -114,6 +162,7 @@ export async function POST(request: NextRequest) {
           status: "completed", // Mark as completed since we're reviewing
         },
       });
+      console.log("Booking created:", booking.id);
     }
 
     // Create the review

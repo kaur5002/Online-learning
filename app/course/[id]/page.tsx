@@ -69,13 +69,8 @@ export default function CoursePage() {
       return;
     }
 
-    // For session bookings, show session type modal first
-    if (type === "trial") {
-      setIsSessionTypeModalOpen(true);
-    } else {
-      // For full course enrollment, proceed directly to checkout
-      proceedToCheckout(type, amount);
-    }
+    // Show session type modal for both trial sessions and full course enrollment
+    setIsSessionTypeModalOpen(true);
   };
 
   const handleSessionTypeSelect = (sessionType: "individual" | "group") => {
@@ -85,6 +80,8 @@ export default function CoursePage() {
     // Proceed to checkout with the selected session type
     if (activeCheckout === "trial") {
       proceedToCheckout(activeCheckout, course!.trialRate, sessionType);
+    } else if (activeCheckout === "full") {
+      proceedToCheckout(activeCheckout, course!.fullCourseRate, sessionType);
     }
   };
 

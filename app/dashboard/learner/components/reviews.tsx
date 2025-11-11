@@ -166,19 +166,42 @@ export default function Reviews() {
       console.error("Error status:", error.response?.status);
       console.error("Full error object:", JSON.stringify(error.response, null, 2));
       
-      const errorMessage = error.response?.data?.error || 
-                          error.response?.data?.details ||
+      // Get all possible error information
+      const errorData = error.response?.data;
+      const errorMessage = errorData?.error || 
+                          errorData?.details ||
                           error.message || 
                           "Failed to submit review. Please try again.";
       
-      // Check if it's a duplicate review error
+      const errorDetails = errorData?.details ? `\n\nDetails: ${errorData.details}` : "";
+      const fullErrorMessage = errorMessage + errorDetails;
+      
+      console.log("Displaying error message:", fullErrorMessage);
+      
+      // Check for specific error types
       const isDuplicate = errorMessage.includes("already submitted a review");
+      const isFutureSession = errorMessage.includes("before attending the session");
+      const isNotEnrolled = errorMessage.includes("must be enrolled") || errorMessage.includes("have booked a session");
+      
+      let title = "Submission Failed";
+      let type: "error" | "warning" | "info" = "error";
+      
+      if (isDuplicate) {
+        title = "Review Already Submitted";
+        type = "info";
+      } else if (isFutureSession) {
+        title = "Session Not Yet Attended";
+        type = "warning";
+      } else if (isNotEnrolled) {
+        title = "Enrollment Required";
+        type = "warning";
+      }
       
       setAlertModal({
         isOpen: true,
-        message: errorMessage,
-        title: isDuplicate ? "Review Already Submitted" : "Submission Failed",
-        type: isDuplicate ? "info" : "error",
+        message: fullErrorMessage,
+        title: title,
+        type: type,
       });
       
       // If duplicate, still refresh to remove it from the list

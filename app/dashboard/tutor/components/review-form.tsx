@@ -97,42 +97,88 @@ export default function ReviewForm() {
     
     try {
       setLoading(true);
-      // Fetch tutor's courses with enrolled students
+      // Fetch tutor's courses
       const response = await axios.get(`/api/courses?userId=${user.id}`);
       const coursesData = response.data.data?.courses || response.data.data || [];
       
-      console.log("Fetched courses:", coursesData); // Debug log
+      console.log("Fetched courses:", coursesData);
       
-      // Ensure it's an array and map to include enrolled students
-      const formattedCourses = Array.isArray(coursesData) 
-        ? coursesData.map((course: any) => {
-            console.log("Processing course:", course.id, course.title);
-            console.log("Enrollments:", course.enrollments);
-            
-            const enrolledStudents = course.enrollments?.map((enrollment: any) => {
-              console.log("Enrollment student data:", enrollment.student);
-              return {
-                id: enrollment.student?.id || enrollment.studentId,
-                name: enrollment.student?.name || 'Unknown Student',
-                email: enrollment.student?.email || '',
-              };
-            }) || [];
-            
-            console.log("Enrolled students for course:", enrolledStudents);
-            
-            return {
-              id: course.id,
-              title: course.title,
-              enrolledStudents,
-            };
-          })
-        : [];
+      // For each course, get students who have made payments
+      const formattedCourses = await Promise.all(
+        Array.isArray(coursesData) 
+          ? coursesData.map(async (course: any) => {
+              console.log("Processing course:", course.id, course.title);
+              
+              // Fetch bookings for this course with payment information
+              try {
+                const bookingsResponse = await axios.get(`/api/bookings?courseId=${course.id}`);
+                const bookings = bookingsResponse.data.data || [];
+                
+                console.log("Bookings for course:", course.id, bookings);
+                
+                // Extract unique students who have completed payments
+                const studentsWithPayments = new Map();
+                
+                bookings.forEach((booking: any) => {
+                  // Check if booking has a completed payment
+                  if (booking.payment?.paymentStatus === 'completed' && booking.learner) {
+                    const studentId = booking.learner.id || booking.learnerId;
+                    if (!studentsWithPayments.has(studentId)) {
+                      studentsWithPayments.set(studentId, {
+                        id: studentId,
+                        name: booking.learner.name || 'Unknown Student',
+                        email: booking.learner.email || '',
+                      });
+                    }
+                  }
+                });
+                
+                // Also include enrolled students (full course payments)
+                if (course.enrollments) {
+                  course.enrollments.forEach((enrollment: any) => {
+                    const studentId = enrollment.student?.id || enrollment.studentId;
+                    if (studentId && !studentsWithPayments.has(studentId)) {
+                      studentsWithPayments.set(studentId, {
+                        id: studentId,
+                        name: enrollment.student?.name || 'Unknown Student',
+                        email: enrollment.student?.email || '',
+                      });
+                    }
+                  });
+                }
+                
+                const enrolledStudents = Array.from(studentsWithPayments.values());
+                
+                console.log("Students with payments for course:", course.id, enrolledStudents);
+                
+                return {
+                  id: course.id,
+                  title: course.title,
+                  enrolledStudents,
+                };
+              } catch (error) {
+                console.error("Error fetching bookings for course:", course.id, error);
+                // Fallback to enrolled students if bookings fetch fails
+                const enrolledStudents = course.enrollments?.map((enrollment: any) => ({
+                  id: enrollment.student?.id || enrollment.studentId,
+                  name: enrollment.student?.name || 'Unknown Student',
+                  email: enrollment.student?.email || '',
+                })) || [];
+                
+                return {
+                  id: course.id,
+                  title: course.title,
+                  enrolledStudents,
+                };
+              }
+            })
+          : []
+      );
       
-      console.log("Formatted courses:", formattedCourses); // Debug log
+      console.log("Formatted courses with students:", formattedCourses);
       setCourses(formattedCourses);
     } catch (error) {
       console.error("Error fetching courses:", error);
-      // Set empty array on error
       setCourses([]);
     } finally {
       setLoading(false);
