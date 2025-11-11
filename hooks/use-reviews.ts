@@ -2,11 +2,12 @@ import { useQuery } from "@tanstack/react-query"
 import type { Review } from "@/lib/mock-data"
 import { mockReviews } from "@/lib/mock-data"
 
-export function useReviews() {
+export function useReviews(tutorId?: string) {
   return useQuery({
-    queryKey: ["reviews"],
+    queryKey: ["reviews", tutorId],
     queryFn: async () => {
-      const response = await fetch("/api/reviews")
+      const url = tutorId ? `/api/reviews?tutorId=${tutorId}` : "/api/reviews"
+      const response = await fetch(url)
       if (!response.ok) {
         return mockReviews as Review[]
       }
