@@ -72,16 +72,22 @@ export async function PUT(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
+  console.log("========== PUT /api/courses/[id] called ==========");
   try {
     const params = await context.params;
+    const { id } = params;
+    console.log("Course ID to update:", id);
+    
     // Verify authentication
     const authResult = await verifyAuth(request);
+    console.log("Auth result:", authResult);
+    
     if (!authResult.success) {
+      console.log("Auth failed, returning 401");
       return NextResponse.json({ error: authResult.error }, { status: 401 });
     }
 
     const { userId, role } = authResult.data!;
-    const { id } = params;
 
     // Only tutors can update courses
     if (role !== "tutor") {
@@ -111,11 +117,28 @@ export async function PUT(
     }
 
     const body = await request.json();
+    console.log("Received update request body:", body);
+    console.log("Body keys:", Object.keys(body));
+    console.log("Body imageUrl:", body.imageUrl, "Type:", typeof body.imageUrl);
+    console.log("Body startDate:", body.startDate, "Type:", typeof body.startDate);
+    console.log("Body endDate:", body.endDate, "Type:", typeof body.endDate);
+
+    // Clean up empty strings to undefined
+    const cleanedBody = Object.fromEntries(
+      Object.entries(body).map(([key, value]) => [
+        key,
+        value === '' ? undefined : value
+      ])
+    );
+    console.log("Cleaned body:", cleanedBody);
+    console.log("Cleaned imageUrl:", cleanedBody.imageUrl, "Type:", typeof cleanedBody.imageUrl);
 
     // Validate request body
-    const validationResult = updateCourseSchema.safeParse(body);
+    const validationResult = updateCourseSchema.safeParse(cleanedBody);
 
     if (!validationResult.success) {
+      console.error("Validation failed for course update:", validationResult.error.issues);
+      console.error("Full validation error:", JSON.stringify(validationResult.error, null, 2));
       return NextResponse.json(
         {
           error: "Validation failed",
@@ -126,6 +149,7 @@ export async function PUT(
     }
 
     const updateData = validationResult.data;
+    console.log("Update data after validation:", updateData);
 
     // Update course
     const updatedCourse = await prisma.course.update({
@@ -154,8 +178,12 @@ export async function PUT(
     });
   } catch (error) {
     console.error("Error updating course:", error);
+    const errorMessage = error instanceof Error ? error.message : "Failed to update course";
     return NextResponse.json(
-      { error: "Failed to update course" },
+      { 
+        error: "Failed to update course",
+        details: errorMessage 
+      },
       { status: 500 }
     );
   }

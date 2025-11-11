@@ -14,9 +14,11 @@ import {
   BookOpen,
   DollarSign,
   Loader2,
+  RefreshCw,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { calculateNextSessionDate } from "@/lib/utils/session-calculator";
 
 interface Booking {
   id: string;
@@ -28,6 +30,15 @@ interface Booking {
     id: string;
     title: string;
     imageUrl?: string;
+    startDate?: string | null;
+    endDate?: string | null;
+    zoomLink?: string | null;
+    schedule?: Array<{
+      days: string[];
+      startTime: string;
+      endTime: string;
+      timezone: string;
+    }>;
   };
   tutor: {
     user: {
@@ -59,6 +70,8 @@ export default function Bookings() {
     try {
       setLoading(true);
       const response = await axios.get(`/api/bookings?learnerId=${user?.id}`);
+      console.log("Bookings response:", response.data);
+      console.log("First booking course data:", response.data.data?.[0]?.course);
       setBookings(response.data.data || []);
     } catch (error) {
       console.error("Error fetching bookings:", error);
@@ -84,6 +97,20 @@ export default function Bookings() {
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  // Calculate next session date based on course schedule
+  const getNextSessionDate = (booking: Booking): Date | null => {
+    return calculateNextSessionDate(booking.course?.schedule);
+  };
+
+  const getSessionDateTime = (booking: Booking): string => {
+    const nextSession = getNextSessionDate(booking);
+    if (nextSession) {
+      return formatDateTime(nextSession.toISOString());
+    }
+    // Fallback to original booking date if no schedule found
+    return formatDateTime(booking.sessionDate);
   };
 
   const totalSpent = bookings.reduce(
@@ -133,11 +160,23 @@ export default function Bookings() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">My Bookings & Payments</h2>
-        <p className="text-muted-foreground mt-1">
-          View your booked sessions and payment history
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">My Bookings & Payments</h2>
+          <p className="text-muted-foreground mt-1">
+            View your booked sessions and payment history
+          </p>
+        </div>
+        <Button
+          onClick={fetchBookings}
+          variant="outline"
+          size="sm"
+          disabled={loading}
+          className="gap-2"
+        >
+          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
       </div>
 
       {/* Payment Stats */}
@@ -234,7 +273,8 @@ export default function Bookings() {
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4 text-muted-foreground" />
                           <span className="text-muted-foreground">
-                            {formatDateTime(booking.sessionDate)}
+                            <span className="font-medium">Next Session: </span>
+                            {getSessionDateTime(booking)}
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
@@ -256,13 +296,39 @@ export default function Bookings() {
                         )}
                       </div>
 
+                      {/* Course Duration */}
+                      {(booking.course?.startDate || booking.course?.endDate) && (
+                        <div className="mt-3 pt-3 border-t">
+                          <p className="text-xs font-medium text-muted-foreground mb-1">Full Course Duration:</p>
+                          <div className="flex items-center gap-2 text-sm">
+                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-muted-foreground">
+                              {booking.course.startDate && formatDate(booking.course.startDate)}
+                              {booking.course.startDate && booking.course.endDate && ' - '}
+                              {booking.course.endDate && formatDate(booking.course.endDate)}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+
                       <div className="flex gap-2 mt-4">
                         <Link href={`/course/${booking.course?.id || ''}`}>
                           <Button size="sm" variant="outline">
                             View Course
                           </Button>
                         </Link>
-                        
+                        {booking.course?.zoomLink && (
+                          <a 
+                            href={booking.course.zoomLink} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                          >
+                            <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
+                              <Video className="h-4 w-4 mr-2" />
+                              Join Zoom Session
+                            </Button>
+                          </a>
+                        )}
                       </div>
                     </div>
                   </div>

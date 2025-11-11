@@ -9,12 +9,16 @@ interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSwitchToSignup?: () => void;
+  message?: string; // Optional message to display above the form
+  messageTitle?: string; // Optional title for the message
 }
 
 export function LoginModal({
   isOpen,
   onClose,
   onSwitchToSignup,
+  message,
+  messageTitle,
 }: LoginModalProps) {
   const router = useRouter();
   const { login } = useAuth();
@@ -106,9 +110,11 @@ export function LoginModal({
 
         <div className="space-y-6">
           <div className="space-y-2">
-            <h2 className="text-2xl font-bold tracking-tight">Welcome back</h2>
+            <h2 className="text-2xl font-bold tracking-tight">
+              {messageTitle || "Welcome back"}
+            </h2>
             <p className="text-sm text-muted-foreground">
-              Sign in to your account to continue
+              {message || "Sign in to your account to continue"}
             </p>
           </div>
 

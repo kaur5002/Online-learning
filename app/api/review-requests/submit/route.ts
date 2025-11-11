@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { calculateNextSessionDate } from "@/lib/utils/session-calculator";
 
 // POST: Submit a review in response to a review request
 export async function POST(request: NextRequest) {
@@ -64,12 +65,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (reviewRequest.status !== "pending") {
-      console.error("Review request already responded to. Status:", reviewRequest.status);
+    // Check if a review currently exists for this combination
+    const existingReview = await prisma.review.findFirst({
+      where: {
+        reviewerId: reviewRequest.studentId,
+        courseId: reviewRequest.courseId,
+        tutorId: reviewRequest.tutorId,
+      },
+    });
+
+    // If review request is already responded AND a review exists, don't allow resubmission
+    if (reviewRequest.status !== "pending" && existingReview) {
+      console.error("Review request already responded to and review exists. Status:", reviewRequest.status);
       return NextResponse.json(
         { error: "This review request has already been responded to", details: `Current status: ${reviewRequest.status}` },
         { status: 400 }
       );
+    }
+
+    // If the review was deleted, allow resubmission by resetting the status
+    if (reviewRequest.status !== "pending" && !existingReview) {
+      console.log("Review was deleted, allowing resubmission");
+      await prisma.reviewRequest.update({
+        where: { id: reviewRequestId },
+        data: {
+          status: "pending",
+          respondedAt: null,
+        },
+      });
     }
 
     // Check if a review already exists for this student and course
@@ -88,6 +111,13 @@ export async function POST(request: NextRequest) {
         tutorId: reviewRequest.tutorId,
         courseId: reviewRequest.courseId,
       },
+      include: {
+        course: {
+          select: {
+            schedule: true,
+          },
+        },
+      },
       orderBy: {
         sessionDate: "desc",
       },
@@ -103,21 +133,61 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Check if the booking exists and if the session date has passed
+    // Check if the booking exists and validate based on course start date
     if (booking) {
-      const sessionDate = new Date(booking.sessionDate);
+      // Get the course to check start date
+      const course = await prisma.course.findUnique({
+        where: { id: reviewRequest.courseId },
+        select: {
+          startDate: true,
+          schedule: true,
+        },
+      });
+
+      console.log("Course found:", course ? "Yes" : "No");
+      if (course) {
+        console.log("Course start date:", course.startDate);
+      }
+
+      // Check if course has started
       const now = new Date();
       
-      console.log("Session date:", sessionDate);
-      console.log("Current date:", now);
-      console.log("Session in future?", sessionDate > now);
-      
-      if (sessionDate > now) {
-        console.error("Session date is in the future - review not allowed");
-        return NextResponse.json(
-          { error: "You cannot submit a review before attending the session. Please wait until after your scheduled session on " + sessionDate.toLocaleDateString() + "." },
-          { status: 403 }
-        );
+      if (course?.startDate) {
+        const courseStartDate = new Date(course.startDate);
+        console.log("Course start date:", courseStartDate);
+        console.log("Current date:", now);
+        console.log("Course started?", courseStartDate <= now);
+        
+        if (courseStartDate > now) {
+          console.error("Course has not started yet - review not allowed");
+          return NextResponse.json(
+            { error: "You cannot submit a review before the course starts. The course begins on " + courseStartDate.toLocaleDateString() + "." },
+            { status: 403 }
+          );
+        }
+      } else {
+        // If no start date, check if at least one session from schedule has occurred
+        const nextSession = calculateNextSessionDate(course?.schedule);
+        const sessionDate = nextSession || new Date(booking.sessionDate);
+        
+        console.log("No start date, checking next session:", nextSession);
+        console.log("Original session date:", booking.sessionDate);
+        console.log("Using session date for validation:", sessionDate);
+        console.log("Current date:", now);
+        console.log("Session in future?", sessionDate > now);
+        
+        // Allow review if at least some time has passed since booking
+        // This allows reviews during the course, not just after all sessions
+        const bookingDate = new Date(booking.createdAt);
+        console.log("Booking created at:", bookingDate);
+        
+        if (bookingDate > now) {
+          console.error("Booking is in the future - review not allowed");
+          return NextResponse.json(
+            { error: "You cannot submit a review before your booking date." },
+            { status: 403 }
+          );
+        }
       }
     }
 
@@ -152,7 +222,7 @@ export async function POST(request: NextRequest) {
     // If no booking exists, create one for the review (for enrolled students)
     if (!booking) {
       console.log("Creating booking for enrolled student to attach review");
-      booking = await prisma.booking.create({
+      const newBooking = await prisma.booking.create({
         data: {
           learnerId: reviewRequest.studentId,
           tutorId: reviewRequest.tutorId,
@@ -161,7 +231,15 @@ export async function POST(request: NextRequest) {
           durationMin: 60, // Default 1 hour duration
           status: "completed", // Mark as completed since we're reviewing
         },
+        include: {
+          course: {
+            select: {
+              schedule: true,
+            },
+          },
+        },
       });
+      booking = newBooking;
       console.log("Booking created:", booking.id);
     }
 
@@ -175,6 +253,17 @@ export async function POST(request: NextRequest) {
         rating,
         comment: comment || null,
         status: "pending", // Reviews start as pending for tutor approval
+      },
+    });
+
+    // Delete any old "responded" review requests for this combination to avoid unique constraint violation
+    await prisma.reviewRequest.deleteMany({
+      where: {
+        tutorId: reviewRequest.tutorId,
+        courseId: reviewRequest.courseId,
+        studentId: reviewRequest.studentId,
+        status: "responded",
+        id: { not: reviewRequestId }, // Don't delete the current one
       },
     });
 
@@ -202,6 +291,17 @@ export async function POST(request: NextRequest) {
       // Mark the review request as responded even though it failed
       if (reviewRequestId) {
         try {
+          // Delete any old "responded" review requests first
+          await prisma.reviewRequest.deleteMany({
+            where: {
+              id: { not: reviewRequestId },
+              tutorId: (await prisma.reviewRequest.findUnique({ where: { id: reviewRequestId } }))?.tutorId,
+              courseId: (await prisma.reviewRequest.findUnique({ where: { id: reviewRequestId } }))?.courseId,
+              studentId: (await prisma.reviewRequest.findUnique({ where: { id: reviewRequestId } }))?.studentId,
+              status: "responded",
+            },
+          });
+          
           await prisma.reviewRequest.update({
             where: { id: reviewRequestId },
             data: {

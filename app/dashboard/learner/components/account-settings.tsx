@@ -34,6 +34,7 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
   const [name, setName] = useState(user?.name || "");
   const [email, setEmail] = useState(user?.email || "");
   const [bio, setBio] = useState(user?.bio || "");
+  const [profileImageUrl, setProfileImageUrl] = useState(user?.profileImageUrl || "");
   
   // Password state
   const [currentPassword, setCurrentPassword] = useState("");
@@ -67,6 +68,7 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
       setName(user.name || "");
       setEmail(user.email || "");
       setBio(user.bio || "");
+      setProfileImageUrl(user.profileImageUrl || "");
     }
   }, [user]);
 
@@ -100,6 +102,7 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
         name: name.trim(),
         email: email.trim(),
         bio: bio.trim() || null,
+        profileImageUrl: profileImageUrl.trim() || null,
       });
 
       if (response.data.success) {
@@ -109,6 +112,7 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
           name: name.trim(),
           email: email.trim(),
           bio: bio.trim() || null,
+          profileImageUrl: profileImageUrl.trim() || null,
         };
         localStorage.setItem("user", JSON.stringify(updatedUser));
         
@@ -253,6 +257,32 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
               rows={4}
               className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             />
+          </div>
+          <div>
+            <label className="text-sm font-medium mb-2 block">
+              Profile Image URL
+            </label>
+            <input
+              type="url"
+              value={profileImageUrl}
+              onChange={(e) => setProfileImageUrl(e.target.value)}
+              placeholder="https://example.com/your-photo.jpg"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            />
+            <p className="text-xs text-muted-foreground mt-1">Enter a URL to your profile photo</p>
+            {profileImageUrl && (
+              <div className="mt-3">
+                <p className="text-xs font-medium mb-2">Preview:</p>
+                <img 
+                  src={profileImageUrl} 
+                  alt="Profile preview" 
+                  className="w-24 h-24 rounded-full object-cover border-2 border-primary"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = "/placeholder.svg";
+                  }}
+                />
+              </div>
+            )}
           </div>
           <button 
             onClick={handleSaveProfile}

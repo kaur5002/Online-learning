@@ -12,7 +12,29 @@ export function useReviews(tutorId?: string) {
         return mockReviews as Review[]
       }
       const json = await response.json()
-      return json.data as Review[]
+      
+      console.log("Raw review data:", json.data[0]); // Debug log
+      
+      // Map the database response to match the expected Review interface
+      const reviews = json.data.map((review: any) => {
+        const tutorId = review.tutor?.id || review.tutorId;
+        console.log("Mapping review - tutorId:", tutorId, "full tutor:", review.tutor); // Debug log
+        
+        return {
+          id: review.id,
+          studentName: review.reviewer?.name || "Anonymous Student",
+          studentAvatar: review.reviewer?.profileImageUrl || "/placeholder.svg",
+          tutorName: review.tutor?.user?.name || "Unknown Tutor",
+          tutorId: tutorId, // Use the tutor's internal ID, not userId
+          courseTitle: review.course?.title || "Unknown Course",
+          rating: review.rating,
+          comment: review.comment || "",
+          createdAt: review.createdAt,
+          status: review.status,
+        }
+      })
+      
+      return reviews as Review[]
     },
   })
 }

@@ -11,6 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { LoginModal } from "@/components/login-modal";
+import { SignupModal } from "@/components/signup-modal";
 import { AlertModal } from "@/components/alert-modal";
 import { SessionTypeModal } from "@/components/session-type-modal";
 import Link from "next/link";
@@ -36,6 +37,7 @@ export default function CoursePage() {
   const { isAuthenticated, user } = useAuth();
   const { handleCheckout, loading: checkoutLoading } = useCheckout();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
   const [isSessionTypeModalOpen, setIsSessionTypeModalOpen] = useState(false);
   const [activeCheckout, setActiveCheckout] = useState<"trial" | "full" | null>(
     null
@@ -71,6 +73,11 @@ export default function CoursePage() {
 
     // Show session type modal for both trial sessions and full course enrollment
     setIsSessionTypeModalOpen(true);
+  };
+
+  const handleSignupClick = () => {
+    setIsLoginModalOpen(false);
+    setIsSignupModalOpen(true);
   };
 
   const handleSessionTypeSelect = (sessionType: "individual" | "group") => {
@@ -495,6 +502,13 @@ export default function CoursePage() {
       <LoginModal
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
+        onSwitchToSignup={handleSignupClick}
+        message="Please sign in as a learner to enroll in courses and book sessions."
+        messageTitle="Sign In Required"
+      />
+      <SignupModal
+        isOpen={isSignupModalOpen}
+        onClose={() => setIsSignupModalOpen(false)}
       />
       <SessionTypeModal
         isOpen={isSessionTypeModalOpen}

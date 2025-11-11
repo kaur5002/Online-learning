@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { AlertModal } from "@/components/alert-modal"
 import { LoginModal } from "@/components/login-modal"
+import { SignupModal } from "@/components/signup-modal"
 import Link from "next/link"
 import { useTutorDetail } from "@/hooks/use-tutor-detail"
 import { useAuth } from "@/hooks/use-auth"
@@ -21,6 +22,7 @@ export default function TutorProfilePage() {
   const { data, isLoading } = useTutorDetail(tutorId)
   const { isAuthenticated, user } = useAuth()
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
+  const [isSignupModalOpen, setIsSignupModalOpen] = useState(false)
   const [isSessionTypeModalOpen, setIsSessionTypeModalOpen] = useState(false)
   const [alertModal, setAlertModal] = useState<{
     isOpen: boolean;
@@ -31,6 +33,11 @@ export default function TutorProfilePage() {
     isOpen: false,
     message: "",
   })
+
+  const handleSignupClick = () => {
+    setIsLoginModalOpen(false)
+    setIsSignupModalOpen(true)
+  }
 
   const handleEnrollClick = (courseId?: string) => {
     if (!isAuthenticated) {
@@ -258,6 +265,13 @@ export default function TutorProfilePage() {
       <LoginModal
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
+        onSwitchToSignup={handleSignupClick}
+        message="Please sign in as a learner to enroll in courses and book sessions."
+        messageTitle="Sign In Required"
+      />
+      <SignupModal
+        isOpen={isSignupModalOpen}
+        onClose={() => setIsSignupModalOpen(false)}
       />
       <AlertModal
         isOpen={alertModal.isOpen}

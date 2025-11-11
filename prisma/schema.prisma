@@ -64,6 +64,8 @@ model Course {
   schedule      CourseSchedule[]
   zoomLink      String?
   
+  startDate     DateTime?  // Optional: Course start date
+  endDate       DateTime?  // Optional: Course end date
 
   category      CourseCategory? @relation(fields: [categoryId], references: [id])
   categoryId    String?    @db.ObjectId

@@ -199,6 +199,8 @@ export async function POST(request: NextRequest) {
         ...courseData,
         tutorId: tutor.id,
         zoomLink: courseData.zoomLink || null,
+        startDate: courseData.startDate || null,
+        endDate: courseData.endDate || null,
       },
       include: {
         tutor: {

@@ -13,7 +13,7 @@ const menuItems = [
   { id: "courses", label: "Courses", icon: BookOpen },
   { id: "bookings", label: "Sessions", icon: Calendar },
   { id: "payments", label: "Payments", icon: DollarSign },
-  //{ id: "reviews", label: "Reviews", icon: Star },
+  { id: "reviews", label: "Reviews", icon: Star },
   { id: "review-form", label: "Review Form", icon: ClipboardList },
   { id: "settings", label: "Account Settings", icon: Settings },
 ];

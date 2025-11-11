@@ -118,8 +118,14 @@ export default function ReviewsPage() {
                           <div className="space-y-1 flex-1">
                             <CardTitle className="text-lg text-foreground">{review.studentName}</CardTitle>
                             <CardDescription>
-                              Session with{" "}
-                              <Link href={`/tutor/${review.tutorId}`} className="text-primary hover:underline">
+                              Course:{" "}
+                              <span className="text-foreground font-medium">{review.courseTitle}</span>
+                              {" • "}
+                              Tutor:{" "}
+                              <Link 
+                                href={`/tutor/${review.tutorId}`} 
+                                className="text-primary hover:underline font-medium"
+                              >
                                 {review.tutorName}
                               </Link>
                             </CardDescription>
@@ -143,8 +149,12 @@ export default function ReviewsPage() {
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-2">
-                      <p className="text-muted-foreground">{review.comment}</p>
-                      <p className="text-sm text-muted-foreground">{new Date(review.createdAt).toLocaleDateString()}</p>
+                      {review.comment && (
+                        <p className="text-muted-foreground">{review.comment}</p>
+                      )}
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(review.createdAt).toLocaleDateString()}
+                      </p>
                     </CardContent>
                   </Card>
                 ))}
