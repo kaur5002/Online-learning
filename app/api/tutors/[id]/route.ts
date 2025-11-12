@@ -13,6 +13,27 @@ export async function GET(
     
     console.log("Fetching tutor with ID:", tutorId);
 
+    // First, let's check if this tutor exists
+    const tutorExists = await prisma.tutor.findUnique({
+      where: { id: tutorId },
+      select: { id: true, userId: true },
+    });
+
+    console.log("Tutor exists check:", tutorExists);
+
+    // Now let's check courses for this tutor ID
+    const coursesForThisTutor = await prisma.course.findMany({
+      where: { tutorId: tutorId },
+      select: {
+        id: true,
+        title: true,
+        tutorId: true,
+      },
+    });
+
+    console.log("Direct course query for tutorId:", tutorId);
+    console.log("Courses found:", coursesForThisTutor);
+
     const tutor = await prisma.tutor.findUnique({
       where: { id: tutorId },
       include: {
@@ -52,12 +73,18 @@ export async function GET(
       },
     });
 
+    console.log("Raw tutor data from DB:", JSON.stringify(tutor, null, 2));
+
     if (!tutor) {
       return NextResponse.json(
         { error: "Tutor not found" },
         { status: 404 }
       );
     }
+
+    console.log("Tutor found:", tutor.id);
+    console.log("Number of courses:", tutor.courses?.length || 0);
+    console.log("Courses data:", JSON.stringify(tutor.courses, null, 2));
 
     // Calculate average rating
     const ratings = tutor.reviewsReceived.map((r: any) => r.rating);
@@ -103,6 +130,8 @@ export async function GET(
       reviews: tutor.reviewsReceived.length,
       image: course.imageUrl || "/placeholder.svg",
     }));
+
+    console.log("Formatted skills:", JSON.stringify(skills, null, 2));
 
     return NextResponse.json({
       success: true,
