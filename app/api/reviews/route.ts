@@ -67,6 +67,8 @@ export async function GET(request: NextRequest) {
       },
     });
 
+    console.log("First review tutor data:", reviews[0]?.tutor); // Debug log
+
     return NextResponse.json({ success: true, data: reviews });
   } catch (error) {
     console.error("Error fetching reviews:", error);
@@ -126,3 +128,158 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// PATCH: Update review status (tutors can accept/reject reviews)
+export async function PATCH(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { reviewId, status, tutorId } = body;
+
+    if (!reviewId || !status || !tutorId) {
+      return NextResponse.json(
+        { error: "Review ID, status, and tutor ID are required" },
+        { status: 400 }
+      );
+    }
+
+    if (!["accepted", "rejected"].includes(status)) {
+      return NextResponse.json(
+        { error: "Status must be either 'accepted' or 'rejected'" },
+        { status: 400 }
+      );
+    }
+
+    // Check if review exists
+    const review = await prisma.review.findUnique({
+      where: { id: reviewId },
+      include: {
+        tutor: {
+          select: {
+            userId: true,
+          },
+        },
+      },
+    });
+
+    if (!review) {
+      return NextResponse.json(
+        { error: "Review not found" },
+        { status: 404 }
+      );
+    }
+
+    // Verify the tutor owns this review
+    if (review.tutor.userId !== tutorId) {
+      return NextResponse.json(
+        { error: "You can only update your own reviews" },
+        { status: 403 }
+      );
+    }
+
+    // Update the review status
+    const updatedReview = await prisma.review.update({
+      where: { id: reviewId },
+      data: {
+        status,
+        approvedAt: status === "accepted" ? new Date() : null,
+      },
+      include: {
+        reviewer: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            profileImageUrl: true,
+          },
+        },
+        course: {
+          select: {
+            id: true,
+            title: true,
+          },
+        },
+        tutor: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                profileImageUrl: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: `Review ${status === "accepted" ? "accepted" : "rejected"} successfully`,
+      data: updatedReview,
+    });
+  } catch (error) {
+    console.error("Error updating review status:", error);
+    return NextResponse.json(
+      { error: "Failed to update review status" },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE: Delete a review (tutors can delete any review)
+export async function DELETE(request: NextRequest) {
+  try {
+    const searchParams = request.nextUrl.searchParams;
+    const reviewId = searchParams.get("reviewId");
+    const tutorId = searchParams.get("tutorId");
+
+    if (!reviewId || !tutorId) {
+      return NextResponse.json(
+        { error: "Review ID and tutor ID are required" },
+        { status: 400 }
+      );
+    }
+
+    // Check if review exists
+    const review = await prisma.review.findUnique({
+      where: { id: reviewId },
+      include: {
+        tutor: {
+          select: {
+            userId: true,
+          },
+        },
+      },
+    });
+
+    if (!review) {
+      return NextResponse.json(
+        { error: "Review not found" },
+        { status: 404 }
+      );
+    }
+
+    // Verify the tutor owns this review
+    if (review.tutor.userId !== tutorId) {
+      return NextResponse.json(
+        { error: "You can only delete your own reviews" },
+        { status: 403 }
+      );
+    }
+
+    // Delete the review
+    await prisma.review.delete({
+      where: { id: reviewId },
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: "Review deleted successfully",
+    });
+  } catch (error) {
+    console.error("Error deleting review:", error);
+    return NextResponse.json(
+      { error: "Failed to delete review" },
+      { status: 500 }
+    );
+  }
+}

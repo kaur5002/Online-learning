@@ -43,6 +43,8 @@ export interface Course {
   imageUrl?: string;
   trialRate: number;
   fullCourseRate: number;
+  startDate?: string;
+  endDate?: string;
   tutor?: {
     id: string;
     bio: string;
@@ -75,6 +77,8 @@ export interface CreateCourseData {
   imageUrl?: string;
   trialRate: number;
   fullCourseRate: number;
+  startDate?: string;
+  endDate?: string;
 }
 
 export type UpdateCourseData = Partial<CreateCourseData>;

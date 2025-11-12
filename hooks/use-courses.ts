@@ -10,19 +10,23 @@ interface UseCoursesParams {
   categoryId?: string;
   page?: number;
   limit?: number;
+  createdAfter?: string;
+  createdBefore?: string;
 }
 
 export function useCourses(params: UseCoursesParams = {}) {
-  const { search, difficulty, categoryId, page = 1, limit = 50 } = params;
+  const { search, difficulty, categoryId, page = 1, limit = 50, createdAfter, createdBefore } = params;
 
   return useQuery({
-    queryKey: ["courses", { search, difficulty, categoryId, page, limit }],
+    queryKey: ["courses", { search, difficulty, categoryId, page, limit, createdAfter, createdBefore }],
     queryFn: async () => {
       const searchParams = new URLSearchParams();
 
       if (search) searchParams.set("search", search);
       if (difficulty) searchParams.set("difficulty", difficulty);
       if (categoryId) searchParams.set("categoryId", categoryId);
+      if (createdAfter) searchParams.set("createdAfter", createdAfter);
+      if (createdBefore) searchParams.set("createdBefore", createdBefore);
       searchParams.set("page", page.toString());
       searchParams.set("limit", limit.toString());
 

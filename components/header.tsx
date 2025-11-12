@@ -88,10 +88,10 @@ export function Header() {
                       <DropdownMenuItem asChild>
                         <Link href="/dashboard">Dashboard</Link>
                       </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
+                      {/* <DropdownMenuItem asChild>
                         <Link href="/dashboard/profile">Profile</Link>
                       </DropdownMenuItem>
-                      <DropdownMenuSeparator />
+                      <DropdownMenuSeparator /> */}
                       <DropdownMenuItem onClick={handleLogout} className="text-red-600">
                         <LogOut className="h-4 w-4 mr-2" />
                         Sign Out

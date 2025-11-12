@@ -10,11 +10,78 @@ import Payments from "./components/payments";
 import Reviews from "./components/reviews";
 import ReviewForm from "./components/review-form";
 import AccountSettings from "./components/account-settings";
+import ProfileCompletionModal from "./components/profile-completion-modal";
+import axios from "axios";
 
 export default function TutorDashboard() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading } = useAuth();
   const [activeTab, setActiveTab] = useState("courses");
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [isCheckingProfile, setIsCheckingProfile] = useState(true);
+
+  useEffect(() => {
+    const checkProfileCompletion = async () => {
+      if (!isLoading && isAuthenticated && user?.role === "tutor") {
+        try {
+          const token = localStorage.getItem("token");
+          const response = await axios.get("/api/tutors/profile", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          if (response.data.success) {
+            const profileData = response.data.data;
+            // Check if essential fields are filled
+            const isComplete =
+              profileData.bio &&
+              profileData.bio.trim().length > 0 &&
+              profileData.hourlyRate &&
+              profileData.hourlyRate > 0 &&
+              profileData.specialties &&
+              profileData.specialties.length > 0;
+
+            setShowProfileModal(!isComplete);
+          } else {
+            // If profile fetch fails, show modal
+            setShowProfileModal(true);
+          }
+        } catch (error) {
+          console.error("Error checking profile:", error);
+          // If error, show modal to be safe
+          setShowProfileModal(true);
+        } finally {
+          setIsCheckingProfile(false);
+        }
+      } else if (!isLoading) {
+        setIsCheckingProfile(false);
+      }
+    };
+
+    checkProfileCompletion();
+  }, [isAuthenticated, isLoading, user]);
+
+  useEffect(() => {
+    if (!isLoading) {
+      if (!isAuthenticated) {
+        router.push("/");
+        return;
+      }
+
+      // Check if user is a tutor
+      if (user?.role !== "tutor") {
+        router.push("/dashboard/learner");
+        return;
+      }
+    }
+  }, [isAuthenticated, isLoading, user, router]);
+
+  const handleProfileComplete = () => {
+    setShowProfileModal(false);
+    // Refresh the page to load the updated profile data
+    window.location.reload();
+  };
 
   useEffect(() => {
     if (!isLoading) {
@@ -32,6 +99,20 @@ export default function TutorDashboard() {
   }, [isAuthenticated, isLoading, user, router]);
 
   const renderContent = () => {
+    // If profile is incomplete, show blocked message
+    if (showProfileModal) {
+      return (
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold mb-2">Profile Incomplete</h2>
+            <p className="text-muted-foreground">
+              Please complete your profile to access the dashboard
+            </p>
+          </div>
+        </div>
+      );
+    }
+
     switch (activeTab) {
       case "courses":
         return <Courses />;
@@ -50,7 +131,7 @@ export default function TutorDashboard() {
     }
   };
 
-  if (isLoading || !isAuthenticated || user?.role !== "tutor") {
+  if (isLoading || isCheckingProfile || !isAuthenticated || user?.role !== "tutor") {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
@@ -63,6 +144,13 @@ export default function TutorDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Profile Completion Modal */}
+      <ProfileCompletionModal
+        isOpen={showProfileModal}
+        onComplete={handleProfileComplete}
+        userId={user?.id || ""}
+      />
+
       {/* Main Content with Sidebar */}
       <div className="flex">
         <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />

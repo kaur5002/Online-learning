@@ -40,9 +40,9 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { tutorId, courseId, studentIds, message } = body;
+    const { tutorId, courseId, studentIds, message, forceResend } = body;
 
-    console.log("Review request POST received:", { tutorId, courseId, studentIds, message });
+    console.log("Review request POST received:", { tutorId, courseId, studentIds, message, forceResend });
 
     if (!tutorId || !courseId || !studentIds || !Array.isArray(studentIds)) {
       console.error("Invalid request data:", { tutorId, courseId, studentIds });
@@ -126,6 +126,20 @@ export async function POST(request: NextRequest) {
 
             if (existingPendingRequest) {
               console.log(`Pending review request already exists for student ${studentId}`);
+              
+              // If forceResend is true, update the existing request with new message and sentAt date
+              if (forceResend) {
+                await prisma.reviewRequest.update({
+                  where: { id: existingPendingRequest.id },
+                  data: {
+                    message: message || "Please share your feedback about the course!",
+                    sentAt: new Date(), // Update the sent date
+                  },
+                });
+                console.log(`Updated existing review request for student ${studentId}`);
+                return { status: 'success', data: existingPendingRequest };
+              }
+              
               return { status: 'duplicate', type: 'pending' };
             }
 
@@ -277,5 +291,64 @@ export async function POST(request: NextRequest) {
     }
     
     return NextResponse.json(errorDetails, { status: 500 });
+  }
+}
+
+// DELETE: Delete a review request (students can delete pending requests)
+export async function DELETE(request: NextRequest) {
+  try {
+    const searchParams = request.nextUrl.searchParams;
+    const requestId = searchParams.get("requestId");
+    const studentId = searchParams.get("studentId");
+
+    if (!requestId || !studentId) {
+      return NextResponse.json(
+        { error: "Request ID and Student ID are required" },
+        { status: 400 }
+      );
+    }
+
+    // Check if request exists and belongs to the student
+    const reviewRequest = await prisma.reviewRequest.findUnique({
+      where: { id: requestId },
+    });
+
+    if (!reviewRequest) {
+      return NextResponse.json(
+        { error: "Review request not found" },
+        { status: 404 }
+      );
+    }
+
+    if (reviewRequest.studentId !== studentId) {
+      return NextResponse.json(
+        { error: "You can only delete your own review requests" },
+        { status: 403 }
+      );
+    }
+
+    // Only allow deletion of pending requests (not responded ones)
+    if (reviewRequest.status !== "pending") {
+      return NextResponse.json(
+        { error: "Cannot delete a review request that has already been responded to" },
+        { status: 400 }
+      );
+    }
+
+    // Delete the review request
+    await prisma.reviewRequest.delete({
+      where: { id: requestId },
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: "Review request deleted successfully",
+    });
+  } catch (error) {
+    console.error("Error deleting review request:", error);
+    return NextResponse.json(
+      { error: "Failed to delete review request" },
+      { status: 500 }
+    );
   }
 }

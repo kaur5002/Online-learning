@@ -7,19 +7,23 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { AlertModal } from "@/components/alert-modal"
 import { LoginModal } from "@/components/login-modal"
+import { SignupModal } from "@/components/signup-modal"
 import Link from "next/link"
 import { useTutorDetail } from "@/hooks/use-tutor-detail"
 import { useAuth } from "@/hooks/use-auth"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { Loader2, Star, Users, Clock, MessageSquare } from "lucide-react"
 import Image from "next/image"
 
 export default function TutorProfilePage() {
   const params = useParams()
+  const router = useRouter()
   const tutorId = params.id as string
   const { data, isLoading } = useTutorDetail(tutorId)
   const { isAuthenticated, user } = useAuth()
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
+  const [isSignupModalOpen, setIsSignupModalOpen] = useState(false)
+  const [isSessionTypeModalOpen, setIsSessionTypeModalOpen] = useState(false)
   const [alertModal, setAlertModal] = useState<{
     isOpen: boolean;
     message: string;
@@ -30,7 +34,12 @@ export default function TutorProfilePage() {
     message: "",
   })
 
-  const handleEnrollClick = () => {
+  const handleSignupClick = () => {
+    setIsLoginModalOpen(false)
+    setIsSignupModalOpen(true)
+  }
+
+  const handleEnrollClick = (courseId?: string) => {
     if (!isAuthenticated) {
       setIsLoginModalOpen(true)
       return
@@ -46,17 +55,21 @@ export default function TutorProfilePage() {
       return
     }
 
-    // If user is a learner, proceed with enrollment logic
-    // TODO: Implement enrollment logic here
-    setAlertModal({
-      isOpen: true,
-      message: "Enrollment functionality coming soon! You'll be able to enroll in courses directly from this page.",
-      title: "Coming Soon",
-      type: "info",
-    })
+    // If courseId is provided, navigate to course page
+    if (courseId) {
+      router.push(`/course/${courseId}`)
+    } else {
+      // Show message to select a specific course
+      setAlertModal({
+        isOpen: true,
+        message: "Please select a specific course from the list below to enroll.",
+        title: "Select a Course",
+        type: "info",
+      })
+    }
   }
 
-  const handleBookSession = () => {
+  const handleBookSession = (courseId?: string) => {
     if (!isAuthenticated) {
       setIsLoginModalOpen(true)
       return
@@ -72,14 +85,18 @@ export default function TutorProfilePage() {
       return
     }
 
-    // If user is a learner, proceed with booking logic
-    // TODO: Implement booking logic here
-    setAlertModal({
-      isOpen: true,
-      message: "Session booking functionality coming soon! You'll be able to schedule one-on-one sessions with tutors.",
-      title: "Coming Soon",
-      type: "info",
-    })
+    // If courseId is provided, navigate to course page
+    if (courseId) {
+      router.push(`/course/${courseId}`)
+    } else {
+      // Show message to select a specific course
+      setAlertModal({
+        isOpen: true,
+        message: "Please select a specific course from the list below to book a session.",
+        title: "Select a Course",
+        type: "info",
+      })
+    }
   }
 
   if (isLoading) {
@@ -132,8 +149,8 @@ export default function TutorProfilePage() {
                   <div className="flex-1 pt-8">
                     <h1 className="text-4xl font-bold text-foreground mb-2">{tutor.name}</h1>
                     <div className="flex flex-wrap gap-2 mb-4">
-                      {tutor.specialties.map((specialty) => (
-                        <Badge key={specialty} variant="secondary">
+                      {tutor.specialties.map((specialty, index) => (
+                        <Badge key={`${tutor.id}-${specialty}-${index}`} variant="secondary">
                           {specialty}
                         </Badge>
                       ))}
@@ -161,11 +178,11 @@ export default function TutorProfilePage() {
                       <p className="text-sm text-muted-foreground">per hour</p>
                     </div> */}
            
-                    <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90" onClick={handleEnrollClick}>
+                    <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90" onClick={() => handleEnrollClick()}>
                       <MessageSquare className="mr-2 h-5 w-5" />
                       Enroll now
                     </Button>
-                    <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90" onClick={handleBookSession}>
+                    <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90" onClick={() => handleBookSession()}>
                       <MessageSquare className="mr-2 h-5 w-5" />
                       Book a tutorial
                     </Button>
@@ -225,9 +242,11 @@ export default function TutorProfilePage() {
                           </div>
                           <span className="font-bold text-primary">${skill.price}</span>
                         </div>
-                        <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90" onClick={handleEnrollClick}>
-                          Enroll Now
-                        </Button>
+                        <Link href={`/course/${skill.id}`} className="w-full">
+                          <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
+                            View Course
+                          </Button>
+                        </Link>
                       </CardContent>
                     </Card>
                   ))}
@@ -246,6 +265,13 @@ export default function TutorProfilePage() {
       <LoginModal
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
+        onSwitchToSignup={handleSignupClick}
+        message="Please sign in as a learner to enroll in courses and book sessions."
+        messageTitle="Sign In Required"
+      />
+      <SignupModal
+        isOpen={isSignupModalOpen}
+        onClose={() => setIsSignupModalOpen(false)}
       />
       <AlertModal
         isOpen={alertModal.isOpen}
