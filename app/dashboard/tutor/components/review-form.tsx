@@ -93,6 +93,13 @@ export default function ReviewForm() {
     isOpen: false,
     studentIds: [],
   });
+  const [confirmDelete, setConfirmDelete] = useState<{
+    isOpen: boolean;
+    reviewId: string | null;
+  }>({
+    isOpen: false,
+    reviewId: null,
+  });
 
   useEffect(() => {
     fetchCourses();
@@ -330,18 +337,24 @@ export default function ReviewForm() {
   };
 
   const handleDeleteReview = async (reviewId: string) => {
-    if (!window.confirm("Are you sure you want to delete this review? This action cannot be undone.")) {
-      return;
-    }
+    setConfirmDelete({
+      isOpen: true,
+      reviewId: reviewId,
+    });
+  };
+
+  const confirmDeleteReview = async () => {
+    if (!confirmDelete.reviewId) return;
 
     try {
-      await axios.delete(`/api/reviews?reviewId=${reviewId}&tutorId=${user?.id}`);
+      await axios.delete(`/api/reviews?reviewId=${confirmDelete.reviewId}&tutorId=${user?.id}`);
       setAlertModal({
         isOpen: true,
         message: "Review has been deleted successfully!",
         title: "Review Deleted",
         type: "success",
       });
+      setConfirmDelete({ isOpen: false, reviewId: null });
       // Refresh both pending and recent reviews
       fetchPendingReviews();
       fetchRecentReviews();
@@ -353,6 +366,7 @@ export default function ReviewForm() {
         title: "Delete Failed",
         type: "error",
       });
+      setConfirmDelete({ isOpen: false, reviewId: null });
     }
   };
 
@@ -709,6 +723,45 @@ export default function ReviewForm() {
                   className="flex-1"
                 >
                   Yes, Send Again
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Confirmation Modal for Deleting */}
+      {confirmDelete.isOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <Card className="w-full max-w-md p-6">
+            <div className="space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100">
+                  <AlertCircle className="h-5 w-5 text-red-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold mb-2">Delete Review</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Are you sure you want to delete this review? This action cannot be undone.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => {
+                    setConfirmDelete({ isOpen: false, reviewId: null });
+                  }}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={confirmDeleteReview}
+                  className="flex-1 bg-red-600 hover:bg-red-700"
+                >
+                  Yes, Delete
                 </Button>
               </div>
             </div>
