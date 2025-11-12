@@ -120,6 +120,9 @@ export async function GET(request: NextRequest) {
       prisma.course.count({ where }),
     ]);
 
+    console.log("Fetched courses count:", courses.length);
+    console.log("Courses with tutorId:", courses.map(c => ({ id: c.id, title: c.title, tutorId: c.tutorId })));
+
     return NextResponse.json({
       success: true,
       data: {
@@ -179,16 +182,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get tutor record
-    const tutor = await prisma.tutor.findUnique({
+    // Get tutor record or create one if it doesn't exist
+    let tutor = await prisma.tutor.findUnique({
       where: { userId },
     });
 
     if (!tutor) {
-      return NextResponse.json(
-        { error: "Tutor profile not found" },
-        { status: 404 }
-      );
+      // Auto-create tutor profile if it doesn't exist
+      console.log("Tutor profile not found for userId:", userId, "- creating one");
+      tutor = await prisma.tutor.create({
+        data: {
+          userId,
+          bio: "",
+          hourlyRate: 25,
+          specialties: [],
+          availability: "Flexible - All days",
+          sessionDuration: "1 hour",
+          language: "English",
+          timezone: "UTC-08:00 Pacific Time",
+        },
+      });
     }
 
     const courseData = validationResult.data;
