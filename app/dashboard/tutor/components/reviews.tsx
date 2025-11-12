@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { Star, ThumbsUp, MessageSquare, TrendingUp, Award, Check, X, Loader2, Trash2 } from "lucide-react";
+import { Star, ThumbsUp, MessageSquare, TrendingUp, Award, Check, X, Loader2, Trash2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { AlertModal } from "@/components/alert-modal";
 import axios from "axios";
 import Image from "next/image";
 
@@ -33,6 +34,22 @@ export default function Reviews() {
   const [acceptedReviews, setAcceptedReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [alertModal, setAlertModal] = useState<{
+    isOpen: boolean;
+    message: string;
+    title?: string;
+    type?: "error" | "warning" | "info" | "success";
+  }>({
+    isOpen: false,
+    message: "",
+  });
+  const [confirmDelete, setConfirmDelete] = useState<{
+    isOpen: boolean;
+    reviewId: string | null;
+  }>({
+    isOpen: false,
+    reviewId: null,
+  });
 
   useEffect(() => {
     if (user?.id) {
@@ -69,27 +86,44 @@ export default function Reviews() {
       fetchReviews();
     } catch (error: any) {
       console.error(`Error ${status === "accepted" ? "accepting" : "rejecting"} review:`, error);
-      alert(error.response?.data?.error || `Failed to ${status === "accepted" ? "accept" : "reject"} review`);
+      setAlertModal({
+        isOpen: true,
+        message: error.response?.data?.error || `Failed to ${status === "accepted" ? "accept" : "reject"} review`,
+        title: "Action Failed",
+        type: "error",
+      });
     } finally {
       setProcessingId(null);
     }
   };
 
   const handleDeleteReview = async (reviewId: string) => {
-    if (!window.confirm("Are you sure you want to delete this review? This action cannot be undone.")) {
-      return;
-    }
+    setConfirmDelete({
+      isOpen: true,
+      reviewId: reviewId,
+    });
+  };
+
+  const confirmDeleteReview = async () => {
+    if (!confirmDelete.reviewId) return;
 
     try {
-      setProcessingId(reviewId);
+      setProcessingId(confirmDelete.reviewId);
       
-      await axios.delete(`/api/reviews?reviewId=${reviewId}&tutorId=${user?.id}`);
+      await axios.delete(`/api/reviews?reviewId=${confirmDelete.reviewId}&tutorId=${user?.id}`);
 
+      setConfirmDelete({ isOpen: false, reviewId: null });
       // Refresh reviews
       fetchReviews();
     } catch (error: any) {
       console.error("Error deleting review:", error);
-      alert(error.response?.data?.error || "Failed to delete review");
+      setAlertModal({
+        isOpen: true,
+        message: error.response?.data?.error || "Failed to delete review",
+        title: "Delete Failed",
+        type: "error",
+      });
+      setConfirmDelete({ isOpen: false, reviewId: null });
     } finally {
       setProcessingId(null);
     }
@@ -425,6 +459,53 @@ export default function Reviews() {
           </div>
         </div>
       </div>
+
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+        message={alertModal.message}
+        title={alertModal.title}
+        type={alertModal.type}
+      />
+
+      {/* Confirmation Modal for Deleting */}
+      {confirmDelete.isOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <Card className="w-full max-w-md p-6">
+            <div className="space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100">
+                  <AlertCircle className="h-5 w-5 text-red-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold mb-2">Delete Review</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Are you sure you want to delete this review? This action cannot be undone.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => {
+                    setConfirmDelete({ isOpen: false, reviewId: null });
+                  }}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={confirmDeleteReview}
+                  className="flex-1 bg-red-600 hover:bg-red-700"
+                >
+                  Yes, Delete
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

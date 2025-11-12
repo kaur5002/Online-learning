@@ -4,6 +4,7 @@ import { useState } from "react";
 import { X, User, GraduationCap } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
+import { AlertModal } from "@/components/alert-modal";
 
 interface SignupModalProps {
   isOpen: boolean;
@@ -26,6 +27,15 @@ export function SignupModal({ isOpen, onClose }: SignupModalProps) {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [alertModal, setAlertModal] = useState<{
+    isOpen: boolean;
+    message: string;
+    title?: string;
+    type?: "error" | "warning" | "info" | "success";
+  }>({
+    isOpen: false,
+    message: "",
+  });
 
   if (!isOpen) return null;
 
@@ -85,23 +95,51 @@ export function SignupModal({ isOpen, onClose }: SignupModalProps) {
       // If registration returns a token, log the user in automatically
       if (data.data?.token) {
         login(data.data.token);
-        router.push("/dashboard");
+        
+        // Close modal and reset form
+        onClose();
+        setFormData({
+          name: "",
+          email: "",
+          password: "",
+          confirmPassword: "",
+          bio: "",
+        });
+        setSelectedRole(null);
+        setStep("role");
+        
+        // Show success message and redirect
+        setAlertModal({
+          isOpen: true,
+          title: "Account Created Successfully!",
+          message: `Welcome to SkillShare! Your ${selectedRole} account has been created.`,
+          type: "success",
+        });
+        
+        setTimeout(() => {
+          router.push("/dashboard");
+        }, 1500);
       } else {
         // Otherwise show success message
-        alert("Account created successfully! Please log in.");
+        setAlertModal({
+          isOpen: true,
+          title: "Account Created Successfully!",
+          message: "Your account has been created. Please log in to continue.",
+          type: "success",
+        });
+        
+        // Close modal and reset form
+        onClose();
+        setFormData({
+          name: "",
+          email: "",
+          password: "",
+          confirmPassword: "",
+          bio: "",
+        });
+        setSelectedRole(null);
+        setStep("role");
       }
-
-      // Close modal and reset form
-      onClose();
-      setFormData({
-        name: "",
-        email: "",
-        password: "",
-        confirmPassword: "",
-        bio: "",
-      });
-      setSelectedRole(null);
-      setStep("role");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create account");
     } finally {
@@ -301,6 +339,14 @@ export function SignupModal({ isOpen, onClose }: SignupModalProps) {
           </div>
         )}
       </div>
+      
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+        message={alertModal.message}
+        title={alertModal.title}
+        type={alertModal.type}
+      />
     </div>
   );
 }

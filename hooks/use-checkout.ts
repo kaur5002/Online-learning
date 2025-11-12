@@ -43,8 +43,7 @@ export function useCheckout() {
       console.error("Checkout error:", error);
       setError(error instanceof Error ? error.message : "Checkout failed");
       setLoading(false);
-      // Show error to user
-      alert(error instanceof Error ? error.message : "Checkout failed. Please try again.");
+      // Error state is set and can be displayed by the component using this hook
     }
   };
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
 import {
@@ -35,7 +35,7 @@ export default function CoursePage() {
   const courseId = params.id as string;
   const { data: course, isLoading } = useCourse(courseId);
   const { isAuthenticated, user } = useAuth();
-  const { handleCheckout, loading: checkoutLoading } = useCheckout();
+  const { handleCheckout, loading: checkoutLoading, error: checkoutError } = useCheckout();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
   const [isSessionTypeModalOpen, setIsSessionTypeModalOpen] = useState(false);
@@ -52,6 +52,18 @@ export default function CoursePage() {
     isOpen: false,
     message: "",
   });
+
+  // Display checkout errors in AlertModal
+  useEffect(() => {
+    if (checkoutError) {
+      setAlertModal({
+        isOpen: true,
+        message: checkoutError,
+        title: "Checkout Failed",
+        type: "error",
+      });
+    }
+  }, [checkoutError]);
 
   const handleEnrollClick = (type: "trial" | "full", amount: number) => {
     setActiveCheckout(type);

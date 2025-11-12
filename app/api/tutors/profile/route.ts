@@ -59,12 +59,31 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // If tutor profile doesn't exist, create one
     if (!user.tutor) {
-      console.log("Tutor profile not found for user");
-      return NextResponse.json(
-        { error: "Tutor profile not found" },
-        { status: 404 }
-      );
+      console.log("Tutor profile not found, creating new profile");
+      const newTutorProfile = await prisma.tutor.create({
+        data: {
+          userId: user.id,
+          bio: "",
+          hourlyRate: 0,
+          specialties: [],
+          availability: "",
+          sessionDuration: "",
+          language: "",
+          timezone: "",
+        },
+      });
+
+      console.log("New tutor profile created:", newTutorProfile.id);
+      
+      return NextResponse.json({
+        success: true,
+        data: {
+          ...user,
+          ...newTutorProfile,
+        },
+      });
     }
 
     console.log("Returning tutor profile");
@@ -100,13 +119,6 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    if (!user.tutor) {
-      return NextResponse.json(
-        { error: "Tutor profile not found" },
-        { status: 404 }
-      );
-    }
-
     const body = await request.json();
     const {
       name,
@@ -120,6 +132,42 @@ export async function PATCH(request: NextRequest) {
       timezone,
     } = body;
 
+    // If tutor profile doesn't exist, create it
+    let tutorProfile = user.tutor;
+    if (!tutorProfile) {
+      console.log("Tutor profile not found, creating new profile during update");
+      tutorProfile = await prisma.tutor.create({
+        data: {
+          userId: user.id,
+          bio: bio || "",
+          hourlyRate: hourlyRate ? parseFloat(hourlyRate) : 0,
+          specialties: specialties || [],
+          availability: availability || "",
+          sessionDuration: sessionDuration || "",
+          language: language || "",
+          timezone: timezone || "",
+        },
+      });
+
+      // Update user info if provided
+      const updatedUser = await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          ...(name && { name }),
+          ...(profileImageUrl !== undefined && { profileImageUrl }),
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          ...updatedUser,
+          ...tutorProfile,
+        },
+        message: "Profile created successfully",
+      });
+    }
+
     // Update user info
     const updatedUser = await prisma.user.update({
       where: { id: user.id },
@@ -131,7 +179,7 @@ export async function PATCH(request: NextRequest) {
 
     // Update tutor profile
     const updatedTutor = await prisma.tutor.update({
-      where: { id: user.tutor.id },
+      where: { id: tutorProfile.id },
       data: {
         ...(bio && { bio }),
         ...(hourlyRate !== undefined && { hourlyRate: parseFloat(hourlyRate) }),
