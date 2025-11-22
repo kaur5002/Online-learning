@@ -128,11 +128,11 @@ export default function HomePage() {
             </p>
            
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/learn">
-                <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90">
+              <Button asChild variant="accent" size="lg">
+                <Link href="/learn">
                   Explore Skills <ArrowRight className="ml-2 h-10 w-10" />
-                </Button>
-              </Link>
+                </Link>
+              </Button>
  
             </div>
           </div>
@@ -187,21 +187,14 @@ export default function HomePage() {
           <div className="container max-w-4xl mx-auto text-center">
             <h2 className="text-3xl font-bold mb-4">Ready to Start Learning?</h2>
             <p className="text-lg mb-8 opacity-90">Join thousands of students learning new skills every day.</p>
-            <Link href="/get-started">
-              <Button size="lg" className="bg-primary-foreground text-primary hover:bg-primary-foreground/90">
-                Get Started Now
-              </Button>
-            </Link>
+            <Button asChild variant="accent" size="lg">
+              <Link href="/get-started">Get Started Now</Link>
+            </Button>
           </div>
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="w-full border-t border-border bg-background py-8 px-4">
-        <div className="container max-w-4xl mx-auto text-center text-muted-foreground">
-          <p>&copy; 2025 SkillShare. All rights reserved.</p>
-        </div>
-      </footer>
+      
     </div>
   )
 }

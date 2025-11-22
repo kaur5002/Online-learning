@@ -390,9 +390,12 @@ export default function ReviewForm() {
           Send review surveys and manage student feedback
         </p>
       </div>
-{/* Stats Section */}
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Card className="p-4">
+
+      {/* Stats Section */}
+<div className="grid gap-4 sm:grid-cols-3">
+
+        {/* Total Reviews */}
+        <div className="rounded-lg border bg-gradient-to-br from-slate-900/30 to-slate-800/10 p-4 shadow-sm backdrop-blur-sm hover:shadow-lg transform transition-all duration-200">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
               <Send className="h-5 w-5 text-blue-600" />
@@ -402,8 +405,10 @@ export default function ReviewForm() {
               <p className="text-2xl font-bold">{recentReviews.length}</p>
             </div>
           </div>
-        </Card>
-        <Card className="p-4">
+        </div>
+
+        {/* Pending */}
+        <div className="rounded-lg border bg-gradient-to-br from-slate-900/30 to-slate-800/10 p-4 shadow-sm backdrop-blur-sm hover:shadow-lg transform transition-all duration-200">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-yellow-100">
               <Clock className="h-5 w-5 text-yellow-600" />
@@ -415,8 +420,10 @@ export default function ReviewForm() {
               </p>
             </div>
           </div>
-        </Card>
-        <Card className="p-4">
+        </div>
+
+        {/* Accepted */}
+        <div className="rounded-lg border bg-gradient-to-br from-slate-900/30 to-slate-800/10 p-4 shadow-sm backdrop-blur-sm hover:shadow-lg transform transition-all duration-200">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100">
               <CheckCircle className="h-5 w-5 text-green-600" />
@@ -428,260 +435,296 @@ export default function ReviewForm() {
               </p>
             </div>
           </div>
-        </Card>
-      </div>
-      {/* Send Review Request Section */}
-      <Card className="p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Send className="h-5 w-5 text-primary" />
-          <h3 className="text-lg font-semibold">Send Review Survey</h3>
         </div>
 
-        <div className="space-y-4">
-          {/* Course Selection */}
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              Select Course
-            </label>
-            {loading ? (
-              <div className="w-full rounded-lg border bg-background px-4 py-3">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Loading courses...
-                </div>
-              </div>
-            ) : (
-              <select
-                value={selectedCourse}
-                onChange={(e) => {
-                  setSelectedCourse(e.target.value);
-                  setSelectedStudents([]);
-                }}
-                className="w-full rounded-lg border bg-background px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+      </div>
+
+
+
+
+
+
+
+      {/* Send Review Request Section */}
+<div
+  className="rounded-lg border bg-gradient-to-br from-slate-900/30 to-slate-800/10 
+  shadow-sm backdrop-blur-sm p-6 hover:shadow-lg transform transition-all duration-200"
+>
+
+  <div className="flex items-center gap-2 mb-4">
+    <Send className="h-5 w-5 text-primary" />
+    <h3 className="text-lg font-semibold">Send Review Survey</h3>
+  </div>
+
+  <div className="space-y-4">
+
+    {/* Course Selection */}
+    <div>
+      <label className="block text-sm font-medium mb-2">
+        Select Course
+      </label>
+
+      {loading ? (
+        <div className="w-full rounded-lg border bg-background px-4 py-3">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Loading courses...
+          </div>
+        </div>
+      ) : (
+        <select
+          value={selectedCourse}
+          onChange={(e) => {
+            setSelectedCourse(e.target.value);
+            setSelectedStudents([]);
+          }}
+          className="w-full rounded-lg border bg-background px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+        >
+          <option value="">Choose a course...</option>
+          {Array.isArray(courses) && courses.length > 0 ? (
+            courses.map((course) => (
+              <option key={course.id} value={course.id}>
+                {course.title}
+              </option>
+            ))
+          ) : (
+            <option value="" disabled>No courses available</option>
+          )}
+        </select>
+      )}
+
+      {!loading && Array.isArray(courses) && courses.length === 0 && (
+        <p className="text-xs text-muted-foreground mt-2">
+          You haven't created any courses yet. Create a course first to send review requests.
+        </p>
+      )}
+    </div>
+
+    {/* Student Selection */}
+    {selectedCourseData && (
+      <div>
+        <label className="block text-sm font-medium mb-2">
+          Select Students ({selectedStudents.length} selected)
+        </label>
+
+        <div className="space-y-2 max-h-48 overflow-y-auto border rounded-lg p-3">
+          {selectedCourseData.enrolledStudents.length > 0 ? (
+            selectedCourseData.enrolledStudents.map((student) => (
+              <label
+                key={student.id}
+                className="flex items-center gap-2 p-2 hover:bg-accent/50 rounded cursor-pointer"
               >
-                <option value="">Choose a course...</option>
-                {Array.isArray(courses) && courses.length > 0 ? (
-                  courses.map((course) => (
-                    <option key={course.id} value={course.id}>
-                      {course.title}
-                    </option>
-                  ))
-                ) : (
-                  <option value="" disabled>
-                    No courses available
-                  </option>
-                )}
-              </select>
-            )}
-            {!loading && Array.isArray(courses) && courses.length === 0 && (
-              <p className="text-xs text-muted-foreground mt-2">
-                You haven't created any courses yet. Create a course first to send review requests.
-              </p>
-            )}
+                <input
+                  type="checkbox"
+                  checked={selectedStudents.includes(student.id)}
+                  onChange={() => toggleStudentSelection(student.id)}
+                  className="rounded"
+                />
+                <div>
+                  <p className="text-sm font-medium">{student.name}</p>
+                  <p className="text-xs text-muted-foreground">{student.email}</p>
+                </div>
+              </label>
+            ))
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              No students enrolled in this course
+            </p>
+          )}
+        </div>
+      </div>
+    )}
+
+    {/* Custom Message */}
+    <div>
+      <label className="block text-sm font-medium mb-2">
+        Custom Message (Optional)
+      </label>
+      <textarea
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+        placeholder="Add a personal message to your review request..."
+        rows={3}
+        className="w-full rounded-lg border bg-background px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+      />
+    </div>
+
+    {/* Send Button */}
+    <Button
+      onClick={() => handleSendReviewRequest(false)}
+      disabled={
+        loading ||
+        !selectedCourse ||
+        selectedStudents.length === 0 ||
+        sendingRequest
+      }
+      className="w-full"
+    >
+      {sendingRequest ? (
+        <>
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          Sending...
+        </>
+      ) : (
+        <>
+          <Mail className="mr-2 h-4 w-4" />
+          {selectedStudents.length > 0
+            ? `Send Review Survey to ${selectedStudents.length} Student(s)`
+            : "Send Review Survey"}
+        </>
+      )}
+    </Button>
+
+    {!loading && courses.length === 0 && (
+      <p className="text-xs text-center text-muted-foreground">
+        Create a course and enroll students to send review surveys
+      </p>
+    )}
+  </div>
+</div>
+
+
+
+
+{/* Pending Reviews Section */}
+<div
+  className="rounded-lg border bg-gradient-to-br from-slate-900/30 to-slate-800/10 
+  shadow-sm backdrop-blur-sm p-6 hover:shadow-lg transform transition-all duration-200"
+>
+  <div className="flex items-center gap-2 mb-4 border-b border-white/10 pb-4">
+    <Clock className="h-5 w-5 text-primary" />
+    <h3 className="text-lg font-semibold">Pending Reviews</h3>
+    <span className="ml-auto text-sm text-muted-foreground">
+      {pendingReviews.length} pending
+    </span>
+  </div>
+
+  {pendingReviews.length > 0 ? (
+    <div className="space-y-4">
+      {pendingReviews.map((review) => (
+        <div
+          key={review.id}
+          className="border rounded-lg p-4 hover:bg-accent/50 transition-colors"
+        >
+          {/* Reviewer + Stars */}
+          <div className="flex items-start justify-between">
+            <div className="flex items-start gap-3">
+              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <span className="text-sm font-medium text-primary">
+                  {review.reviewer.name.charAt(0).toUpperCase()}
+                </span>
+              </div>
+
+              <div>
+                <p className="font-medium">{review.reviewer.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {review.reviewer.email}
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Course: {review.course.title}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1">
+              {[...Array(5)].map((_, i) => (
+                <Star
+                  key={i}
+                  className={`h-4 w-4 ${
+                    i < review.rating
+                      ? "text-yellow-500 fill-yellow-500"
+                      : "text-gray-300"
+                  }`}
+                />
+              ))}
+              <span className="ml-2 text-sm font-medium">
+                {review.rating}/5
+              </span>
+            </div>
           </div>
 
-          {/* Student Selection */}
-          {selectedCourseData && (
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Select Students ({selectedStudents.length} selected)
-              </label>
-              <div className="space-y-2 max-h-48 overflow-y-auto border rounded-lg p-3">
-                {selectedCourseData.enrolledStudents.length > 0 ? (
-                  selectedCourseData.enrolledStudents.map((student) => (
-                    <label
-                      key={student.id}
-                      className="flex items-center gap-2 p-2 hover:bg-accent rounded cursor-pointer"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedStudents.includes(student.id)}
-                        onChange={() => toggleStudentSelection(student.id)}
-                        className="rounded"
-                      />
-                      <div>
-                        <p className="text-sm font-medium">{student.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {student.email}
-                        </p>
-                      </div>
-                    </label>
-                  ))
-                ) : (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    No students enrolled in this course
-                  </p>
-                )}
+          {/* Comment */}
+          {review.comment && (
+            <div className="bg-muted/50 rounded-lg p-3 mt-3">
+              <div className="flex items-start gap-2">
+                <MessageSquare className="h-4 w-4 text-muted-foreground mt-0.5" />
+                <p className="text-sm">{review.comment}</p>
               </div>
             </div>
           )}
 
-          {/* Custom Message */}
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              Custom Message (Optional)
-            </label>
-            <textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="Add a personal message to your review request..."
-              rows={3}
-              className="w-full rounded-lg border bg-background px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-            />
-          </div>
-
-          {/* Send Button */}
-          <Button
-            onClick={() => handleSendReviewRequest(false)}
-            disabled={
-              loading ||
-              !selectedCourse ||
-              selectedStudents.length === 0 ||
-              sendingRequest
-            }
-            className="w-full"
-          >
-            {sendingRequest ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Sending...
-              </>
-            ) : (
-              <>
-                <Mail className="mr-2 h-4 w-4" />
-                {selectedStudents.length > 0 
-                  ? `Send Review Survey to ${selectedStudents.length} Student(s)`
-                  : 'Send Review Survey'}
-              </>
-            )}
-          </Button>
-          {!loading && courses.length === 0 && (
-            <p className="text-xs text-center text-muted-foreground">
-              Create a course and enroll students to send review surveys
-            </p>
-          )}
-        </div>
-      </Card>
-
-      {/* Pending Reviews Section */}
-      <Card className="p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Clock className="h-5 w-5 text-primary" />
-          <h3 className="text-lg font-semibold">Pending Reviews</h3>
-          <span className="ml-auto text-sm text-muted-foreground">
-            {pendingReviews.length} pending
-          </span>
-        </div>
-
-        {pendingReviews.length > 0 ? (
-          <div className="space-y-4">
-            {pendingReviews.map((review) => (
-              <div
-                key={review.id}
-                className="border rounded-lg p-4 space-y-3 hover:shadow-md transition-shadow"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start gap-3">
-                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <span className="text-sm font-medium text-primary">
-                        {review.reviewer.name.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                    <div>
-                      <p className="font-medium">{review.reviewer.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {review.reviewer.email}
-                      </p>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Course: {review.course.title}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    {[...Array(5)].map((_, i) => (
-                      <Star
-                        key={i}
-                        className={`h-4 w-4 ${
-                          i < review.rating
-                            ? "text-yellow-500 fill-yellow-500"
-                            : "text-gray-300"
-                        }`}
-                      />
-                    ))}
-                    <span className="ml-2 text-sm font-medium">
-                      {review.rating}/5
-                    </span>
-                  </div>
-                </div>
-
-                {review.comment && (
-                  <div className="bg-muted/50 rounded-lg p-3">
-                    <div className="flex items-start gap-2">
-                      <MessageSquare className="h-4 w-4 text-muted-foreground mt-0.5" />
-                      <p className="text-sm">{review.comment}</p>
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between pt-2 border-t">
-                  <p className="text-xs text-muted-foreground">
-                    Submitted {new Date(review.createdAt).toLocaleDateString()}
-                  </p>
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleDeleteReview(review.id)}
-                      className="text-gray-600 hover:bg-gray-50"
-                    >
-                      <Trash2 className="mr-1 h-4 w-4" />
-                      Delete
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleReviewAction(review.id, "reject")}
-                      className="text-red-600 hover:bg-red-50"
-                    >
-                      <XCircle className="mr-1 h-4 w-4" />
-                      Reject
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={() => handleReviewAction(review.id, "accept")}
-                      className="bg-green-600 hover:bg-green-700"
-                    >
-                      <CheckCircle className="mr-1 h-4 w-4" />
-                      Accept & Publish
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
-            <p className="text-sm text-muted-foreground mb-2">
-              No pending reviews
-            </p>
+          {/* Actions */}
+          <div className="flex items-center justify-between pt-2 border-t mt-3">
             <p className="text-xs text-muted-foreground">
-              Reviews will appear here once students submit their feedback
+              Submitted {new Date(review.createdAt).toLocaleDateString()}
             </p>
+
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => handleDeleteReview(review.id)}
+                className="text-gray-600 hover:bg-gray-50"
+              >
+                <Trash2 className="mr-1 h-4 w-4" />
+                Delete
+              </Button>
+
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => handleReviewAction(review.id, "reject")}
+                className="text-red-600 hover:bg-red-50"
+              >
+                <XCircle className="mr-1 h-4 w-4" />
+                Reject
+              </Button>
+
+              <Button
+                size="sm"
+                onClick={() => handleReviewAction(review.id, "accept")}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <CheckCircle className="mr-1 h-4 w-4" />
+                Accept & Publish
+              </Button>
+            </div>
           </div>
-        )}
-      </Card>
+        </div>
+      ))}
+    </div>
+  ) : (
+    <div className="flex flex-col items-center justify-center py-12 text-center">
+      <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
+      <p className="text-sm text-muted-foreground mb-2">
+        No pending reviews
+      </p>
+      <p className="text-xs text-muted-foreground">
+        Reviews will appear here once students submit their feedback
+      </p>
+    </div>
+  )}
+</div>
+
+<AlertModal
+  isOpen={alertModal.isOpen}
+  onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+  message={alertModal.message}
+  title={alertModal.title}
+  type={alertModal.type}
+/>
 
 
-      
-      
-      <AlertModal
-        isOpen={alertModal.isOpen}
-        onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
-        message={alertModal.message}
-        title={alertModal.title}
-        type={alertModal.type}
-      />
+
+
+
+
+
+
+
+
+
+
 
       {/* Confirmation Modal for Resending */}
       {confirmResend.isOpen && (

@@ -170,12 +170,17 @@ export default function TutorsPage() {
 
             <div className="text-center pt-8">
               <Link href="/">
-                <Button variant="outline">Back to Home</Button>
+                <Button
+                  className="inline-flex h-9 items-center justify-center rounded-md bg-gradient-to-br from-blue-300 to-cyan-300 px-4 py-2 text-sm font-medium text-white shadow-lg shadow-blue-300/40 transition-all hover:shadow-lg hover:shadow-blue-300/70 hover:scale-105"
+                >
+                  Back to Home
+                </Button>
               </Link>
             </div>
           </div>
         </div>
       </main>
+        
     </div>
   )
 }
