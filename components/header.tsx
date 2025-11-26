@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Menu, User, LogOut } from "lucide-react";
+import { Menu, User, LogOut, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { SignupModal } from "./signup-modal";
 import { LoginModal } from "./login-modal";
@@ -18,6 +18,7 @@ import {
 export function Header() {
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const { user, isAuthenticated, logout, isLoading } = useAuth();
 
@@ -201,13 +202,123 @@ export function Header() {
             </div>
 
             <button
-            className="md:hidden inline-flex items-center justify-center rounded-md p-2 text-slate-300 transition-colors"
+              className="md:hidden inline-flex items-center justify-center rounded-md p-2 text-slate-300 transition-colors hover:bg-slate-800/50"
               aria-label="Toggle menu"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             >
-              <Menu className="h-6 w-6" />
+              {isMobileMenuOpen ? (
+                <X className="h-6 w-6" />
+              ) : (
+                <Menu className="h-6 w-6" />
+              )}
             </button>
           </div>
         </div>
+
+        {/* Mobile Menu */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden relative z-20">
+            <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-blue-900 to-slate-950" />
+            <nav className="relative container px-4 py-4 space-y-2">
+              <Link href="/" onClick={() => setIsMobileMenuOpen(false)}>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start text-slate-200 hover:bg-slate-800/50"
+                >
+                  Home
+                </Button>
+              </Link>
+              
+              <Link href="/learn" onClick={() => setIsMobileMenuOpen(false)}>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start text-slate-200 hover:bg-slate-800/50"
+                >
+                  Learn a Skill
+                </Button>
+              </Link>
+
+              <Link href="/tutors" onClick={() => setIsMobileMenuOpen(false)}>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start text-slate-200 hover:bg-slate-800/50"
+                >
+                  Find a Tutor
+                </Button>
+              </Link>
+
+              <Link href="/reviews" onClick={() => setIsMobileMenuOpen(false)}>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start text-slate-200 hover:bg-slate-800/50"
+                >
+                  Ratings & Reviews
+                </Button>
+              </Link>
+
+              <Link href="/latest" onClick={() => setIsMobileMenuOpen(false)}>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start text-slate-200 hover:bg-slate-800/50"
+                >
+                  Latest
+                </Button>
+              </Link>
+
+              <div className="pt-4 border-t border-slate-700/50 space-y-2">
+                {!mounted || isLoading ? (
+                  <div className="h-9 bg-muted animate-pulse rounded-md" />
+                ) : isAuthenticated ? (
+                  <>
+                    <Link href="/dashboard" onClick={() => setIsMobileMenuOpen(false)}>
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-start text-slate-200 hover:bg-slate-800/50"
+                      >
+                        Dashboard
+                      </Button>
+                    </Link>
+                    
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start text-red-400 hover:bg-slate-800/50"
+                      onClick={() => {
+                        handleLogout();
+                        setIsMobileMenuOpen(false);
+                      }}
+                    >
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Sign Out
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start text-slate-200 hover:bg-slate-800/50"
+                      onClick={() => {
+                        handleLoginClick();
+                        setIsMobileMenuOpen(false);
+                      }}
+                    >
+                      Sign In
+                    </Button>
+                    
+                    <button
+                      onClick={() => {
+                        handleSignupClick();
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="w-full inline-flex h-9 items-center justify-center rounded-md bg-gradient-to-br from-blue-300 to-cyan-300 px-4 py-2 text-sm font-medium text-white shadow-lg shadow-blue-300/40"
+                    >
+                      Get Started
+                    </button>
+                  </>
+                )}
+              </div>
+            </nav>
+          </div>
+        )}
       </header>
 
       <SignupModal
