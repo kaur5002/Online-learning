@@ -246,220 +246,252 @@ export default function Courses() {
           Add Course
         </button>
       </div>
-
+      
       {/* Course Stats */}
-      <div className="grid gap-4 sm:grid-cols-4">
-        <div className="rounded-lg border bg-card p-4 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
-              <BookOpen className="h-5 w-5 text-blue-600" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Active Courses</p>
-              <p className="text-2xl font-bold">{courses.length}</p>
-            </div>
-          </div>
-        </div>
-        <div className="rounded-lg border bg-card p-4 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100">
-              <Users className="h-5 w-5 text-green-600" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Total Enrollments</p>
-              <p className="text-2xl font-bold">{totalEnrollments}</p>
-            </div>
-          </div>
-        </div>
-        <div className="rounded-lg border bg-card p-4 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100">
-              <Calendar className="h-5 w-5 text-purple-600" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Total Bookings</p>
-              <p className="text-2xl font-bold">{totalBookings}</p>
-            </div>
-          </div>
-        </div>
-        <div className="rounded-lg border bg-card p-4 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-100">
-              <DollarSign className="h-5 w-5 text-orange-600" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Avg. Course Rate</p>
-              <p className="text-2xl font-bold">
-                $
-                {courses.length > 0
-                  ? (
-                    courses.reduce((sum, c) => sum + c.fullCourseRate, 0) /
-                    courses.length
-                  ).toFixed(0)
-                  : 0}
-              </p>
-            </div>
-          </div>
-        </div>
+<div className="grid gap-4 sm:grid-cols-4">
+  <div className="rounded-lg border bg-gradient-to-br from-slate-900/30 to-slate-800/10 p-4 shadow-sm backdrop-blur-sm hover:shadow-lg transform transition-all duration-200">
+    <div className="flex items-center gap-3">
+      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
+        <BookOpen className="h-5 w-5 text-blue-600" />
       </div>
+      <div>
+        <p className="text-sm text-muted-foreground">Active Courses</p>
+        <p className="text-2xl font-bold">{courses.length}</p>
+      </div>
+    </div>
+  </div>
 
-      {/* Courses List */}
-      <div className="rounded-lg border bg-card shadow-sm">
-        <div className="border-b p-6">
-          <h3 className="text-lg font-semibold">Your Courses</h3>
-          <p className="text-sm text-muted-foreground mt-1">
-            Courses you offer to students
-          </p>
-        </div>
-        <div className="p-6">
-          {courses.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <BookOpen className="h-12 w-12 text-muted-foreground mb-4" />
-              <p className="text-sm text-muted-foreground mb-4">
-                You haven&apos;t created any courses yet
-              </p>
-              <button
-                onClick={handleAddCourse}
-                className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90"
-              >
-                <Plus className="h-4 w-4" />
-                Create Your First Course
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {courses.map((course) => (
-                <div
-                  key={course.id}
-                  className="border rounded-lg p-4 hover:bg-accent/50 transition-colors"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-start gap-3">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                          <BookOpen className="h-6 w-6 text-primary" />
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-lg">
-                            {course.title}
-                          </h4>
-                          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                            {course.shortDescription}
-                          </p>
-                          <div className="flex flex-wrap gap-3 mt-3 text-sm">
-                            <span className="flex items-center gap-1 text-muted-foreground">
-                              <DollarSign className="h-4 w-4" />
-                              Trial: ${course.trialRate} | Full: ${course.fullCourseRate}
-                            </span>
-                            <span className="flex items-center gap-1 text-muted-foreground">
-                              <Clock className="h-4 w-4" />
-                              {course.totalHours} hours
-                            </span>
-                            <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
-                              {difficultyLabels[course.difficulty]}
-                            </span>
-                            {course.category && (
-                              <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
-                                {course.category.name}
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex flex-wrap gap-3 mt-2 text-xs text-muted-foreground">
-                            <span className="flex items-center gap-1">
-                              <Calendar className="h-3 w-3" />
-                              {formatSchedule(course.schedule)}
-                            </span>
-                            {course._count && course._count.enrollments > 0 && (
-                              <span className="flex items-center gap-1">
-                                <Users className="h-3 w-3" />
-                                {course._count.enrollments} enrollment
-                                {course._count.enrollments !== 1 ? "s" : ""}
-                              </span>
-                            )}
-                            {course._count && course._count.bookings > 0 && (
-                              <span className="flex items-center gap-1">
-                                <Calendar className="h-3 w-3" />
-                                {course._count.bookings} booking
-                                {course._count.bookings !== 1 ? "s" : ""}
-                              </span>
+  <div className="rounded-lg border bg-gradient-to-br from-slate-900/30 to-slate-800/10 p-4 shadow-sm backdrop-blur-sm hover:shadow-lg transform transition-all duration-200">
+    <div className="flex items-center gap-3">
+      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100">
+        <Users className="h-5 w-5 text-green-600" />
+      </div>
+      <div>
+        <p className="text-sm text-muted-foreground">Total Enrollments</p>
+        <p className="text-2xl font-bold">{totalEnrollments}</p>
+      </div>
+    </div>
+  </div>
 
-                            )}
-                          </div>
-                          {course.zoomLink && (
-                            <div className="mt-3 pt-3 border-t">
-                              <a
-                                href={course.zoomLink}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 hover:underline"
-                              >
-                                <Video className="h-4 w-4" />
-                                <span>Join Zoom Meeting</span>
-                                <ExternalLink className="h-3 w-3" />
-                              </a>
-                            </div>
-                          )}
-                        </div>
+  <div className="rounded-lg border bg-gradient-to-br from-slate-900/30 to-slate-800/10 p-4 shadow-sm backdrop-blur-sm hover:shadow-lg transform transition-all duration-200">
+    <div className="flex items-center gap-3">
+      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100">
+        <Calendar className="h-5 w-5 text-purple-600" />
+      </div>
+      <div>
+        <p className="text-sm text-muted-foreground">Total Bookings</p>
+        <p className="text-2xl font-bold">{totalBookings}</p>
+      </div>
+    </div>
+  </div>
+
+  <div className="rounded-lg border bg-gradient-to-br from-slate-900/30 to-slate-800/10 p-4 shadow-sm backdrop-blur-sm hover:shadow-lg transform transition-all duration-200">
+    <div className="flex items-center gap-3">
+      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-100">
+        <DollarSign className="h-5 w-5 text-orange-600" />
+      </div>
+      <div>
+        <p className="text-sm text-muted-foreground">Avg. Course Rate</p>
+        <p className="text-2xl font-bold">
+          $
+          {courses.length > 0
+            ? (
+                courses.reduce((sum, c) => sum + c.fullCourseRate, 0) /
+                courses.length
+              ).toFixed(0)
+            : 0}
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+{/* Course Stats */}
+<div className="rounded-lg border bg-gradient-to-br from-slate-900/30 to-slate-800/10 
+  shadow-sm backdrop-blur-sm p-6 hover:shadow-lg transform transition-all duration-200">
+
+  <div className="border-b border-white/10 pb-4 mb-4">
+    <h3 className="text-lg font-semibold">Your Courses</h3>
+    <p className="text-sm text-muted-foreground mt-1">
+      Courses you offer to students
+    </p>
+  </div>
+
+  <div>
+    {courses.length === 0 ? (
+      <div className="flex flex-col items-center justify-center py-12 text-center">
+        <BookOpen className="h-12 w-12 text-muted-foreground mb-4" />
+        <p className="text-sm text-muted-foreground mb-4">
+          You haven&apos;t created any courses yet
+        </p>
+        <button
+          onClick={handleAddCourse}
+          className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90"
+        >
+          <Plus className="h-4 w-4" />
+          Create Your First Course
+        </button>
+      </div>
+    ) : (
+      <div className="space-y-4">
+        {courses.map((course) => (
+          <div
+            key={course.id}
+            className="border rounded-lg p-4 hover:bg-accent/50 transition-colors"
+          >
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
+                    <BookOpen className="h-6 w-6 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-lg">
+                      {course.title}
+                    </h4>
+                    <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                      {course.shortDescription}
+                    </p>
+                    <div className="flex flex-wrap gap-3 mt-3 text-sm">
+                      <span className="flex items-center gap-1 text-muted-foreground">
+                        <DollarSign className="h-4 w-4" />
+                        Trial: ${course.trialRate} | Full: ${course.fullCourseRate}
+                      </span>
+                      <span className="flex items-center gap-1 text-muted-foreground">
+                        <Clock className="h-4 w-4" />
+                        {course.totalHours} hours
+                      </span>
+                      <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                        {difficultyLabels[course.difficulty]}
+                      </span>
+                      {course.category && (
+                        <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
+                          {course.category.name}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-3 mt-2 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        {formatSchedule(course.schedule)}
+                      </span>
+                      {course._count && course._count.enrollments > 0 && (
+                        <span className="flex items-center gap-1">
+                          <Users className="h-3 w-3" />
+                          {course._count.enrollments} enrollment
+                          {course._count.enrollments !== 1 ? "s" : ""}
+                        </span>
+                      )}
+                      {course._count && course._count.bookings > 0 && (
+                        <span className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          {course._count.bookings} booking
+                          {course._count.bookings !== 1 ? "s" : ""}
+                        </span>
+                      )}
+                    </div>
+                    {course.zoomLink && (
+                      <div className="mt-3 pt-3 border-t">
+                        <a
+                          href={course.zoomLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                        >
+                          <Video className="h-4 w-4" />
+                          <span>Join Zoom Meeting</span>
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
                       </div>
-                    </div>
-                    <div className="flex gap-2 ml-4">
-                      <button
-                        onClick={() => handleEditCourse(course)}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-                        title="Edit course"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteClick(course)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                        title="Delete course"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Available Categories */}
-      {categories.length > 0 && (
-        <div className="rounded-lg border bg-card shadow-sm">
-          <div className="border-b p-6">
-            <h3 className="text-lg font-semibold">Available Categories</h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              Choose from these categories when creating courses
-            </p>
-          </div>
-          <div className="p-6">
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {categories.map((category) => (
-                <div
-                  key={category.id}
-                  className="flex items-center gap-3 rounded-lg border bg-background p-4"
-                >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                    <BookOpen className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <span className="font-medium">{category.name}</span>
-                    {category._count && (
-                      <p className="text-xs text-muted-foreground">
-                        {category._count.courses} course
-                        {category._count.courses !== 1 ? "s" : ""}
-                      </p>
                     )}
                   </div>
                 </div>
-              ))}
+              </div>
+              <div className="flex gap-2 ml-4">
+                <button
+                  onClick={() => handleEditCourse(course)}
+                  className="p-2 text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                  title="Edit course"
+                >
+                  <Edit className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => handleDeleteClick(course)}
+                  className="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                  title="Delete course"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+</div>
+
+
+
+{/* Available Categories */}
+{categories.length > 0 && (
+  <div
+    className="rounded-lg border bg-gradient-to-br from-slate-900/30 to-slate-800/10 
+    shadow-sm backdrop-blur-sm p-6 hover:shadow-lg transform transition-all duration-200"
+  >
+    <div className="border-b border-white/10 pb-4 mb-4">
+      <h3 className="text-lg font-semibold">Available Categories</h3>
+      <p className="text-sm text-muted-foreground mt-1">
+        Choose from these categories when creating courses
+      </p>
+    </div>
+
+    <div className="space-y-4">
+      {categories.map((category) => (
+        <div
+          key={category.id}
+          className="border rounded-lg p-4 hover:bg-accent/50 transition-colors"
+        >
+          <div className="flex items-start gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
+              <BookOpen className="h-6 w-6 text-primary" />
+            </div>
+
+            <div className="flex-1">
+              <h4 className="font-semibold text-lg">{category.name}</h4>
+
+              {category._count && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  {category._count.courses} course
+                  {category._count.courses !== 1 ? "s" : ""}
+                </p>
+              )}
             </div>
           </div>
         </div>
-      )}
+      ))}
+    </div>
+  </div>
+)}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
       {/* Tips for Creating Courses */}
       <div className="rounded-lg border bg-blue-50 dark:bg-blue-950 p-6">

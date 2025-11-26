@@ -117,75 +117,46 @@ export default function HomePage() {
     <div className="flex min-h-screen flex-col">
       <Header />
       <main className="flex-1">
-        
-        {/* Hero Section with Video Background */}
-<section className="relative w-full py-20 px-4 overflow-hidden min-h-[70vh]">
-  {/* Background video */}
-  <video
-    className="absolute inset-0 h-full w-full object-cover"
-    src="/video/Any skill-bg.mp4" 
-    autoPlay
-    loop
-    muted
-    playsInline
-  />
-
-  {/* Dark overlay so text stays readable */}
-  <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-background/95" />
-
-  {/* Content on top of video */}
-  <div className="relative container max-w-4xl mx-auto text-center flex flex-col items-center justify-center min-h-[50vh]">
-    <h1 className="text-5xl md:text-6xl font-bold text-white mb-6 text-balance drop-shadow-lg">
-      Learn Any Skill, Anytime, Anywhere
-    </h1>
-    <p className="text-xl text-gray-100 mb-8 text-balance max-w-2xl drop-shadow-md">
-      Connect with expert tutors worldwide for interactive video sessions and personalized learning experiences.
-    </p>
-
-    <div className="flex flex-col sm:flex-row gap-4 justify-center">
-      <Link href="/learn">
-        <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg">
-          Explore Skills <ArrowRight className="ml-2 h-10 w-10" />
-        </Button>
-      </Link>
-    </div>
-  </div>
-</section>
-
+        {/* Hero Section */}
+        <section className="w-full py-20 px-4 bg-gradient-to-b from-primary/10 to-background">
+          <div className="container max-w-4xl mx-auto text-center">
+            <h1 className="text-5xl md:text-6xl font-bold text-foreground mb-6 text-balance">
+              Learn Any Skill, Anytime, Anywhere
+            </h1>
+            <p className="text-xl text-muted-foreground mb-8 text-balance">
+              Connect with expert tutors worldwide for interactive video sessions and personalized learning experiences.
+            </p>
+           
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link href="/learn">
+                <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90">
+                  Explore Skills <ArrowRight className="ml-2 h-10 w-10" />
+                </Button>
+              </Link>
+ 
+            </div>
+          </div>
+        </section>
 
         {/* Stats Section */}
-      
-{/* Stats Section */}
-<section className="w-full py-16 px-4 bg-background">
-  <div className="container max-w-4xl mx-auto">
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-
-      {/* Card 1 */}
-      <div className="text-center p-6 rounded-xl border border-border bg-card transition-all duration-300
-        hover:scale-105 hover:shadow-[0_0_25px_rgba(0,150,255,0.4)] hover:border-primary">
-        <div className="text-4xl font-bold text-primary mb-2">10,000+</div>
-        <p className="text-muted-foreground">Expert Tutors</p>
-      </div>
-
-      {/* Card 2 */}
-      <div className="text-center p-6 rounded-xl border border-border bg-card transition-all duration-300
-        hover:scale-105 hover:shadow-[0_0_25px_rgba(0,255,150,0.4)] hover:border-primary">
-        <div className="text-4xl font-bold text-primary mb-2">50,000+</div>
-        <p className="text-muted-foreground">Active Students</p>
-      </div>
-
-      {/* Card 3 */}
-      <div className="text-center p-6 rounded-xl border border-border bg-card transition-all duration-300
-        hover:scale-105 hover:shadow-[0_0_25px_rgba(255,200,0,0.4)] hover:border-primary">
-        <div className="text-4xl font-bold text-primary mb-2">4.8/5</div>
-        <p className="text-muted-foreground">Average Rating</p>
-      </div>
-
-    </div>
-  </div>
-</section>
-
-
+        <section className="w-full py-16 px-4 bg-background">
+          <div className="container max-w-4xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="text-center">
+                <div className="text-4xl font-bold text-primary mb-2">10,000+</div>
+                <p className="text-muted-foreground">Expert Tutors</p>
+              </div>
+              <div className="text-center">
+                <div className="text-4xl font-bold text-primary mb-2">50,000+</div>
+                <p className="text-muted-foreground">Active Students</p>
+              </div>
+              <div className="text-center">
+                <div className="text-4xl font-bold text-primary mb-2">4.8/5</div>
+                <p className="text-muted-foreground">Average Rating</p>
+              </div>
+            </div>
+          </div>
+        </section>
 
         {/* Features Section */}
         <section className="w-full py-16 px-4 bg-card">
@@ -217,21 +188,14 @@ export default function HomePage() {
           <div className="container max-w-4xl mx-auto text-center">
             <h2 className="text-3xl font-bold mb-4">Ready to Start Learning?</h2>
             <p className="text-lg mb-8 opacity-90">Join thousands of students learning new skills every day.</p>
-            <Link href="/get-started">
-              <Button size="lg" className="bg-primary-foreground text-primary hover:bg-primary-foreground/90">
-                Get Started Now
-              </Button>
-            </Link>
+            <Button asChild variant="accent" size="lg">
+              <Link href="/get-started">Get Started Now</Link>
+            </Button>
           </div>
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="w-full border-t border-border bg-background py-8 px-4">
-        <div className="container max-w-4xl mx-auto text-center text-muted-foreground">
-          <p>&copy; 2025 SkillShare. All rights reserved.</p>
-        </div>
-      </footer>
+      
     </div>
   )
 }
