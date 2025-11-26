@@ -52,7 +52,7 @@ export default function Payments() {
 
         // Get tutor data from localStorage or fetch from API
         let tutorId: string | null = null;
-        
+
         const userData = localStorage.getItem("user");
         if (userData) {
           const parsedUser = JSON.parse(userData);
@@ -60,17 +60,14 @@ export default function Payments() {
         }
 
         // If no tutorId in localStorage, fetch from courses API
-        // (since courses have tutorId, we can get it from there)
         if (!tutorId) {
           try {
             const coursesResponse = await fetch(`/api/courses?userId=${user.id}`);
             const coursesResult = await coursesResponse.json();
-            
+
             if (coursesResult.success && coursesResult.data.length > 0) {
-              // Get tutorId from the first course
               tutorId = coursesResult.data[0].tutorId;
-              
-              // Update localStorage with tutorId for future use
+
               if (userData) {
                 const parsedUser = JSON.parse(userData);
                 parsedUser.tutorId = tutorId;
@@ -88,12 +85,10 @@ export default function Payments() {
           return;
         }
 
-        // Fetch bookings for this tutor which include payment info
         const response = await fetch(`/api/bookings?tutorId=${tutorId}`);
         const result = await response.json();
 
         if (result.success && result.data) {
-          // Filter only bookings that have payments
           const paymentsData = result.data
             .filter((booking: any) => booking.payment)
             .map((booking: any) => ({
@@ -119,7 +114,6 @@ export default function Payments() {
 
           setPayments(paymentsData);
 
-          // Calculate stats
           const totalEarnings = paymentsData
             .filter((p: Payment) => p.paymentStatus === "completed")
             .reduce((sum: number, p: Payment) => sum + p.amount, 0);
@@ -176,57 +170,63 @@ export default function Payments() {
     <div className="space-y-6">
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              ${stats.totalEarnings.toFixed(2)}
+        {/* Total Earnings */}
+        <div className="rounded-lg border bg-gradient-to-br from-slate-900/30 to-slate-800/10 p-4 shadow-sm backdrop-blur-sm hover:shadow-lg transform transition-all duration-200">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-yellow-100">
+              <DollarSign className="h-5 w-5 text-yellow-600" />
             </div>
-            <p className="text-xs text-muted-foreground">
-              From {stats.completedPayments} completed payment{stats.completedPayments !== 1 ? 's' : ''}
-            </p>
-          </CardContent>
-        </Card>
+            <div>
+              <p className="text-sm text-muted-foreground">Total Earnings</p>
+              <p className="text-2xl font-bold">${stats.totalEarnings.toFixed(2)}</p>
+              <p className="text-xs text-muted-foreground">
+                From {stats.completedPayments} completed payment
+                {stats.completedPayments !== 1 ? "s" : ""}
+              </p>
+            </div>
+          </div>
+        </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completed</CardTitle>
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.completedPayments}</div>
-            <p className="text-xs text-muted-foreground">
-              Successfully processed
-            </p>
-          </CardContent>
-        </Card>
+        {/* Completed */}
+        <div className="rounded-lg border bg-gradient-to-br from-slate-900/30 to-slate-800/10 p-4 shadow-sm backdrop-blur-sm hover:shadow-lg transform transition-all duration-200">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100">
+              <CreditCard className="h-5 w-5 text-green-600" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Completed</p>
+              <p className="text-2xl font-bold">{stats.completedPayments}</p>
+              <p className="text-xs text-muted-foreground">Successfully processed</p>
+            </div>
+          </div>
+        </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending</CardTitle>
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.pendingPayments}</div>
-            <p className="text-xs text-muted-foreground">
-              Awaiting processing
-            </p>
-          </CardContent>
-        </Card>
+        {/* Pending */}
+        <div className="rounded-lg border bg-gradient-to-br from-slate-900/30 to-slate-800/10 p-4 shadow-sm backdrop-blur-sm hover:shadow-lg transform transition-all duration-200">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
+              <CreditCard className="h-5 w-5 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Pending</p>
+              <p className="text-2xl font-bold">{stats.pendingPayments}</p>
+              <p className="text-xs text-muted-foreground">Awaiting processing</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Payments List */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Payment History</CardTitle>
-          <CardDescription>
-            A list of all payments received from your students
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+      <div className="rounded-lg border bg-gradient-to-br from-slate-900/30 to-slate-800/10 
+        shadow-sm backdrop-blur-sm p-6 hover:shadow-lg transform transition-all duration-200">
+        <div className="border-b border-white/10 pb-4 mb-4">
+          <div className="flex items-center gap-2">
+            <CreditCard className="h-5 w-5 text-primary" />
+            <h3 className="text-lg font-semibold">Payment History</h3>
+          </div>
+        </div>
+
+        <div className="space-y-4">
           {payments.length === 0 ? (
             <div className="text-center py-12">
               <DollarSign className="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
@@ -236,64 +236,59 @@ export default function Payments() {
               </p>
             </div>
           ) : (
-            <div className="space-y-4">
-              {payments.map((payment) => (
-                <div
-                  key={payment.id}
-                  className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors"
-                >
-                  <div className="flex-1 space-y-2">
-                    <div className="flex items-start gap-3">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <BookOpen className="h-4 w-4 text-muted-foreground" />
-                          <h4 className="font-medium">
-                            {payment.booking.course.title}
-                          </h4>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          Student: {payment.booking.learner.name}
-                        </p>
-                        <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
-                          <Calendar className="h-3 w-3" />
-                          <span>
-                            Session on{" "}
-                            {new Date(payment.booking.sessionDate).toLocaleDateString()} 
-                            {" "}({payment.booking.durationMin} min)
-                          </span>
-                        </div>
+            payments.map((payment) => (
+              <div
+                key={payment.id}
+                className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors"
+              >
+                <div className="flex-1 space-y-2">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <BookOpen className="h-4 w-4 text-muted-foreground" />
+                        <h4 className="font-medium">{payment.booking.course.title}</h4>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Student: {payment.booking.learner.name}
+                      </p>
+                      <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
+                        <Calendar className="h-3 w-3" />
+                        <span>
+                          Session on {new Date(payment.booking.sessionDate).toLocaleDateString()} 
+                          ({payment.booking.durationMin} min)
+                        </span>
                       </div>
                     </div>
-
-                    <div className="flex flex-wrap items-center gap-2 text-xs">
-                      <Badge variant="outline" className={getStatusColor(payment.paymentStatus)}>
-                        {payment.paymentStatus}
-                      </Badge>
-                      <Badge variant="outline">
-                        {getPaymentMethodLabel(payment.paymentMethod)}
-                      </Badge>
-                      {payment.transactionId && (
-                        <span className="text-muted-foreground">
-                          Transaction: {payment.transactionId.slice(0, 12)}...
-                        </span>
-                      )}
-                    </div>
                   </div>
 
-                  <div className="mt-3 sm:mt-0 sm:ml-4 text-right">
-                    <div className="text-2xl font-bold text-green-600">
-                      ${payment.amount.toFixed(2)}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(payment.createdAt).toLocaleDateString()}
-                    </p>
+                  <div className="flex flex-wrap items-center gap-2 text-xs">
+                    <Badge variant="outline" className={getStatusColor(payment.paymentStatus)}>
+                      {payment.paymentStatus}
+                    </Badge>
+                    <Badge variant="outline">
+                      {getPaymentMethodLabel(payment.paymentMethod)}
+                    </Badge>
+                    {payment.transactionId && (
+                      <span className="text-muted-foreground">
+                        Transaction: {payment.transactionId.slice(0, 12)}...
+                      </span>
+                    )}
                   </div>
                 </div>
-              ))}
-            </div>
+
+                <div className="mt-3 sm:mt-0 sm:ml-4 text-right">
+                  <div className="text-2xl font-bold text-green-600">
+                    ${payment.amount.toFixed(2)}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(payment.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+            ))
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

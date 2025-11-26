@@ -144,17 +144,30 @@ export default function Reviews() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative overflow-hidden">
+      {/* Decorative background orbs (subtle, non-interactive) */}
+      <div className="pointer-events-none absolute inset-0 -z-10">
+        <div className="absolute -top-16 -left-16 w-72 h-72 rounded-full bg-gradient-to-br from-blue-600/20 to-transparent blur-3xl opacity-60 animate-[pulse_6s_ease-in-out_infinite]" />
+        <div className="absolute -bottom-20 right-[-10%] w-96 h-96 rounded-full bg-gradient-to-br from-cyan-500/10 to-transparent blur-3xl opacity-50" style={{ animationDelay: "1.5s" }} />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,.01)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,.01)_1px,transparent_1px)] bg-[size:60px_60px] opacity-5" />
+      </div>
+
       <div>
         <h2 className="text-2xl font-bold tracking-tight">Reviews & Ratings</h2>
-        <p className="text-muted-foreground mt-1">
-          Manage your feedback from students
-        </p>
+        <p className="text-muted-foreground mt-1">Manage your feedback from students</p>
+
+        <div className="mt-4 flex items-center gap-3">
+          <div className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-blue-600/80 to-cyan-400/60 px-3 py-1 text-white text-sm shadow-md">
+            <Star className="h-4 w-4 text-yellow-300" />
+            <span className="font-semibold">{avgRating}</span>
+            <span className="opacity-80">avg</span>
+          </div>
+          </div>
       </div>
 
       {/* Review Stats */}
       <div className="grid gap-4 sm:grid-cols-4">
-        <div className="rounded-lg border bg-card p-4 shadow-sm">
+        <div className="rounded-lg border bg-gradient-to-br from-slate-900/30 to-slate-800/10 p-4 shadow-sm backdrop-blur-sm hover:shadow-lg transform transition-all duration-200">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-yellow-100">
               <Star className="h-5 w-5 text-yellow-600" />
@@ -165,7 +178,7 @@ export default function Reviews() {
             </div>
           </div>
         </div>
-        <div className="rounded-lg border bg-card p-4 shadow-sm">
+        <div className="rounded-lg border bg-gradient-to-br from-slate-900/30 to-slate-800/10 p-4 shadow-sm backdrop-blur-sm hover:shadow-lg transform transition-all duration-200">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
               <MessageSquare className="h-5 w-5 text-blue-600" />
@@ -176,7 +189,7 @@ export default function Reviews() {
             </div>
           </div>
         </div>
-        <div className="rounded-lg border bg-card p-4 shadow-sm">
+        <div className="rounded-lg border bg-gradient-to-br from-slate-900/30 to-slate-800/10 p-4 shadow-sm backdrop-blur-sm hover:shadow-lg transform transition-all duration-200">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100">
               <ThumbsUp className="h-5 w-5 text-green-600" />
@@ -187,7 +200,7 @@ export default function Reviews() {
             </div>
           </div>
         </div>
-        <div className="rounded-lg border bg-card p-4 shadow-sm">
+        <div className="rounded-lg border bg-gradient-to-br from-slate-900/30 to-slate-800/10 p-4 shadow-sm backdrop-blur-sm hover:shadow-lg transform transition-all duration-200">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-100">
               <Award className="h-5 w-5 text-orange-600" />
@@ -199,6 +212,10 @@ export default function Reviews() {
           </div>
         </div>
       </div>
+
+
+
+
 
       {/* Pending Reviews */}
       {pendingReviews.length > 0 && (
@@ -216,7 +233,7 @@ export default function Reviews() {
               </div>
             ) : (
               pendingReviews.map((review) => (
-                <Card key={review.id} className="p-4">
+                <Card key={review.id} className="p-4 hover:shadow-lg hover:-translate-y-1 transform transition-transform duration-200">
                   <div className="space-y-4">
                     <div className="flex items-start gap-4">
                       <Image
@@ -307,166 +324,209 @@ export default function Reviews() {
         </div>
       )}
 
+
+
+
       {/* Rating Breakdown */}
-      <div className="rounded-lg border bg-card shadow-sm">
-        <div className="border-b p-6">
+      <div className="rounded-lg border bg-gradient-to-br from-slate-900/30 to-slate-800/10 shadow-sm backdrop-blur-sm p-6 hover:shadow-lg transform transition-all duration-200">
+
+        <div className="border-b border-white/10 pb-4 mb-4">
           <h3 className="text-lg font-semibold">Rating Breakdown</h3>
           <p className="text-sm text-muted-foreground mt-1">
             Distribution of your accepted ratings
           </p>
         </div>
-        <div className="p-6">
-          <div className="space-y-3">
-            {ratingBreakdown.map(({ rating, count, percentage }) => (
-              <div key={rating} className="flex items-center gap-3">
-                <div className="flex items-center gap-1 w-16">
-                  <span className="text-sm font-medium">{rating}</span>
-                  <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                </div>
-                <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-yellow-500 transition-all"
-                    style={{ width: `${percentage}%` }}
-                  />
-                </div>
-                <span className="text-sm text-muted-foreground w-12 text-right">
-                  {count}
-                </span>
+
+        <div className="space-y-4">
+          {ratingBreakdown.map(({ rating, count, percentage }) => (
+            <div key={rating} className="flex items-center gap-3">
+              <div className="flex items-center gap-1 w-16">
+                <span className="text-sm font-medium">{rating}</span>
+                <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
               </div>
-            ))}
-          </div>
+
+              <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-yellow-400 to-yellow-600 transition-all"
+                  style={{ width: `${percentage}%` }}
+                />
+              </div>
+
+              <span className="text-sm text-muted-foreground w-12 text-right">
+                {count}
+              </span>
+            </div>
+          ))}
         </div>
+
       </div>
+
+
 
       {/* Accepted Reviews */}
-      <div className="rounded-lg border bg-card shadow-sm">
-        <div className="border-b p-6">
-          <h3 className="text-lg font-semibold">Accepted Reviews</h3>
-          <p className="text-sm text-muted-foreground mt-1">
-            Reviews visible on your public profile
-          </p>
-        </div>
-        <div className="p-6">
-          {loading ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          ) : acceptedReviews.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <MessageSquare className="h-12 w-12 text-muted-foreground mb-4" />
-              <p className="text-sm text-muted-foreground mb-4">No accepted reviews yet</p>
-              <p className="text-xs text-muted-foreground">
-                Accept pending reviews to display them publicly
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {acceptedReviews.map((review) => (
-                <Card key={review.id} className="p-4">
-                  <div className="space-y-4">
-                    <div className="flex items-start gap-4">
-                      <Image
-                        src={review.reviewer.profileImageUrl || "/placeholder.svg"}
-                        alt={review.reviewer.name}
-                        width={48}
-                        height={48}
-                        className="w-12 h-12 rounded-full object-cover"
-                      />
-                      <div className="flex-1">
-                        <h4 className="font-semibold">{review.reviewer.name}</h4>
-                        <p className="text-sm text-muted-foreground">{review.course.title}</p>
-                        <div className="flex items-center gap-1 mt-2">
-                          {Array.from({ length: 5 }).map((_, i) => (
-                            <Star
-                              key={i}
-                              className={`h-4 w-4 ${
-                                i < review.rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
-                              }`}
-                            />
-                          ))}
-                          <span className="text-sm text-muted-foreground ml-2">
-                            ({review.rating}/5)
-                          </span>
-                        </div>
-                        {review.comment && (
-                          <p className="text-sm text-muted-foreground mt-2">{review.comment}</p>
-                        )}
-                        <p className="text-xs text-muted-foreground mt-2">
-                          Accepted on {new Date(review.approvedAt || review.createdAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex justify-end">
-                      <Button
-                        onClick={() => handleDeleteReview(review.id)}
-                        disabled={processingId !== null}
-                        variant="outline"
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        size="sm"
-                      >
-                        {processingId === review.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <>
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Delete Review
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
+<div
+  className="rounded-lg border bg-gradient-to-br from-slate-900/30 to-slate-800/10 
+  shadow-sm backdrop-blur-sm p-6 hover:shadow-lg transform transition-all duration-200"
+>
+  <div className="border-b border-white/10 pb-4 mb-4">
+    <h3 className="text-lg font-semibold">Accepted Reviews</h3>
+    <p className="text-sm text-muted-foreground mt-1">
+      Reviews visible on your public profile
+    </p>
+  </div>
 
-      {/* Performance Tips */}
-      <div className="rounded-lg border bg-card shadow-sm">
-        <div className="border-b p-6">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-primary" />
-            <h3 className="text-lg font-semibold">Improve Your Rating</h3>
-          </div>
-        </div>
-        <div className="p-6">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="p-4 rounded-lg border bg-background">
-              <h4 className="font-medium mb-2">Be Responsive</h4>
-              <p className="text-sm text-muted-foreground">
-                Reply to messages and booking requests within 24 hours
-              </p>
-            </div>
-            <div className="p-4 rounded-lg border bg-background">
-              <h4 className="font-medium mb-2">Quality Content</h4>
-              <p className="text-sm text-muted-foreground">
-                Provide well-structured lessons with clear learning outcomes
-              </p>
-            </div>
-            <div className="p-4 rounded-lg border bg-background">
-              <h4 className="font-medium mb-2">Professional Conduct</h4>
-              <p className="text-sm text-muted-foreground">
-                Maintain punctuality and professionalism in all interactions
-              </p>
-            </div>
-            <div className="p-4 rounded-lg border bg-background">
-              <h4 className="font-medium mb-2">Follow Up</h4>
-              <p className="text-sm text-muted-foreground">
-                Check in with students after sessions to ensure satisfaction
-              </p>
+  <div>
+    {loading ? (
+      <div className="flex justify-center py-8">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    ) : acceptedReviews.length === 0 ? (
+      <div className="flex flex-col items-center justify-center py-12 text-center">
+        <MessageSquare className="h-12 w-12 text-muted-foreground mb-4" />
+        <p className="text-sm text-muted-foreground mb-4">No accepted reviews yet</p>
+        <p className="text-xs text-muted-foreground">
+          Accept pending reviews to display them publicly
+        </p>
+      </div>
+    ) : (
+      <div className="space-y-4">
+        {acceptedReviews.map((review) => (
+          <div
+            key={review.id}
+            className="border rounded-lg p-4 hover:bg-accent/50 transition-colors"
+          >
+            <div className="flex items-start gap-4">
+              <Image
+                src={review.reviewer.profileImageUrl || "/placeholder.svg"}
+                alt={review.reviewer.name}
+                width={48}
+                height={48}
+                className="w-12 h-12 rounded-full object-cover"
+              />
+
+              <div className="flex-1">
+                <h4 className="font-semibold">{review.reviewer.name}</h4>
+                <p className="text-sm text-muted-foreground">{review.course.title}</p>
+
+                <div className="flex items-center gap-1 mt-2">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star
+                      key={i}
+                      className={`h-4 w-4 ${
+                        i < review.rating
+                          ? "fill-yellow-400 text-yellow-400"
+                          : "text-gray-300"
+                      }`}
+                    />
+                  ))}
+                  <span className="text-sm text-muted-foreground ml-2">
+                    ({review.rating}/5)
+                  </span>
+                </div>
+
+                {review.comment && (
+                  <p className="text-sm text-muted-foreground mt-2">
+                    {review.comment}
+                  </p>
+                )}
+
+                <p className="text-xs text-muted-foreground mt-2">
+                  Accepted on{" "}
+                  {new Date(review.approvedAt || review.createdAt).toLocaleDateString()}
+                </p>
+              </div>
+
+              <div className="flex justify-end">
+                <Button
+                  onClick={() => handleDeleteReview(review.id)}
+                  disabled={processingId !== null}
+                  variant="outline"
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50 ml-4"
+                  size="sm"
+                >
+                  {processingId === review.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete Review
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
+        ))}
       </div>
+    )}
+  </div>
+</div>
 
-      <AlertModal
-        isOpen={alertModal.isOpen}
-        onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
-        message={alertModal.message}
-        title={alertModal.title}
-        type={alertModal.type}
-      />
+
+
+
+
+
+
+
+
+{/* Improve Your Rating */}
+<div
+  className="rounded-lg border bg-gradient-to-br from-slate-900/30 to-slate-800/10 
+  shadow-sm backdrop-blur-sm p-6 hover:shadow-lg transform transition-all duration-200"
+>
+  <div className="border-b border-white/10 pb-4 mb-4">
+    <div className="flex items-center gap-2">
+      <TrendingUp className="h-5 w-5 text-primary" />
+      <h3 className="text-lg font-semibold">Improve Your Rating</h3>
+    </div>
+  </div>
+
+  <div className="grid gap-4 sm:grid-cols-2">
+    <div className="border rounded-lg p-4 hover:bg-accent/50 transition-colors">
+      <h4 className="font-medium mb-2">Be Responsive</h4>
+      <p className="text-sm text-muted-foreground">
+        Reply to messages and booking requests within 24 hours
+      </p>
+    </div>
+
+    <div className="border rounded-lg p-4 hover:bg-accent/50 transition-colors">
+      <h4 className="font-medium mb-2">Quality Content</h4>
+      <p className="text-sm text-muted-foreground">
+        Provide well-structured lessons with clear learning outcomes
+      </p>
+    </div>
+
+    <div className="border rounded-lg p-4 hover:bg-accent/50 transition-colors">
+      <h4 className="font-medium mb-2">Professional Conduct</h4>
+      <p className="text-sm text-muted-foreground">
+        Maintain punctuality and professionalism in all interactions
+      </p>
+    </div>
+
+    <div className="border rounded-lg p-4 hover:bg-accent/50 transition-colors">
+      <h4 className="font-medium mb-2">Follow Up</h4>
+      <p className="text-sm text-muted-foreground">
+        Check in with students after sessions to ensure satisfaction
+      </p>
+    </div>
+  </div>
+</div>
+
+<AlertModal
+  isOpen={alertModal.isOpen}
+  onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+  message={alertModal.message}
+  title={alertModal.title}
+  type={alertModal.type}
+/>
+
+
+
+
+
+
+
 
       {/* Confirmation Modal for Deleting */}
       {confirmDelete.isOpen && (

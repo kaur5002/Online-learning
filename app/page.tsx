@@ -161,7 +161,8 @@ export default function HomePage() {
         {/* Features Section */}
         <section className="w-full py-16 px-4 bg-card">
           <div className="container max-w-4xl mx-auto">
-            <h2 className="text-3xl font-bold text-center mb-12">Why Choose SkillShare?</h2>
+           <h2 className="text-3xl font-bold text-center mb-12 animate-pulse">Why Choose SkillShare?</h2>
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="p-6 rounded-lg border border-border bg-background">
                 <BookOpen className="h-12 w-12 text-primary mb-4" />
@@ -187,21 +188,14 @@ export default function HomePage() {
           <div className="container max-w-4xl mx-auto text-center">
             <h2 className="text-3xl font-bold mb-4">Ready to Start Learning?</h2>
             <p className="text-lg mb-8 opacity-90">Join thousands of students learning new skills every day.</p>
-            <Link href="/get-started">
-              <Button size="lg" className="bg-primary-foreground text-primary hover:bg-primary-foreground/90">
-                Get Started Now
-              </Button>
-            </Link>
+            <Button asChild variant="accent" size="lg">
+              <Link href="/get-started">Get Started Now</Link>
+            </Button>
           </div>
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="w-full border-t border-border bg-background py-8 px-4">
-        <div className="container max-w-4xl mx-auto text-center text-muted-foreground">
-          <p>&copy; 2025 SkillShare. All rights reserved.</p>
-        </div>
-      </footer>
+      
     </div>
   )
 }
